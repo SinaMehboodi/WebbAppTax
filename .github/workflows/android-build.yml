@@ -1,0 +1,123 @@
+# Builds the SamTaxco Android app (debug + optional signed release APK).
+#
+# Triggers
+# --------
+#   - push to main          → build debug APK, upload as workflow artifact
+#   - manual workflow_dispatch with `release` input → build signed release APK
+#   - tag `v*`              → build signed release APK
+#
+# Outputs
+# -------
+#   debug   → samtaxco-debug.apk         (always built; side-load on any phone)
+#   release → samtaxco-release.apk       (only when signing secrets configured)
+#
+# Required GitHub secrets for release builds:
+#   ANDROID_KEYSTORE          base64-encoded .jks keystore
+#   ANDROID_KEYSTORE_PASSWORD password to open the keystore
+#   ANDROID_KEY_ALIAS         alias of the signing key inside the keystore
+#   ANDROID_KEY_PASSWORD      password to use the key
+#
+# Optional secrets (build-time configuration of the WebView URL):
+#   SAMTAXCO_PROD_URL         e.g. https://samtaxco.app  (defaults to that)
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Build signed release APK"
+        required: false
+        default: "false"
+        type: choice
+        options: ["false", "true"]
+  push_tags:
+    tags: ["v*"]
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+
+    env:
+      # Pass the production URL into capacitor.config.ts at sync time
+      SAMTAXCO_PROD_URL: ${{ secrets.SAMTAXCO_PROD_URL || 'https://samtaxco.app' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Capacitor sync (re-render config + copy plugins)
+        run: npx cap sync android
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: samtaxco-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # --- Signed release APK (only when secrets are present) -------------
+      - name: Decode keystore (release)
+        if: ${{ github.event.inputs.release == 'true' || startsWith(github.ref, 'refs/tags/v') }}
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE" ]; then
+            echo "::warning::ANDROID_KEYSTORE secret missing — skipping release build."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE" | base64 -d > android/app/release.keystore
+          echo "Keystore decoded ($(wc -c < android/app/release.keystore) bytes)"
+
+      - name: Build release APK
+        if: ${{ (github.event.inputs.release == 'true' || startsWith(github.ref, 'refs/tags/v')) && env.HAS_KEYSTORE == 'true' }}
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS:        ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD:     ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease --no-daemon \
+            -PsamtaxcoKeystore=release.keystore \
+            -PsamtaxcoKeystorePassword="$ANDROID_KEYSTORE_PASSWORD" \
+            -PsamtaxcoKeyAlias="$ANDROID_KEY_ALIAS" \
+            -PsamtaxcoKeyPassword="$ANDROID_KEY_PASSWORD"
+
+      - name: Upload release APK
+        if: ${{ (github.event.inputs.release == 'true' || startsWith(github.ref, 'refs/tags/v')) }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: samtaxco-release-apk
+          path: android/app/build/outputs/apk/release/app-release*.apk
+          retention-days: 365
+          if-no-files-found: warn

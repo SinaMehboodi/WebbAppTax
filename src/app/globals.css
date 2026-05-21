@@ -1,26 +1,201 @@
 @import "tailwindcss";
 
+/* Tailwind v4: make `dark:` classes react to [data-theme="dark"] on <html>
+   so the user-selectable theme drives both Tailwind utilities AND our own
+   CSS variables. "Auto" mode leaves the attribute unset and falls back to
+   the system @media query below. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* =============================================================================
+   SamTaxco — design tokens
+   Palette: emerald (growth/savings), amber (action), sky (info), rose (warn).
+   Surfaces are warm — soft white / deep navy — not pure black & white.
+   ============================================================================= */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand */
+  --brand-50:  #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+
+  /* Accent */
+  --accent-500: #f59e0b;
+  --accent-600: #d97706;
+
+  /* Surfaces (warm, not pure white/black) */
+  --surface-0:  #fafaf7;     /* page bg */
+  --surface-1:  #ffffff;     /* card bg */
+  --surface-2:  #f5f5f1;     /* nested */
+  --border:     #e7e5e0;     /* subtle border */
+
+  --fg:         #1c1917;
+  --fg-muted:   #57534e;
+
+  /* Gradients */
+  --brand-gradient: linear-gradient(135deg, #10b981 0%, #059669 50%, #0d9488 100%);
+  --hero-gradient:  radial-gradient(circle at 15% 20%, rgba(16,185,129,.18), transparent 45%),
+                    radial-gradient(circle at 85% 70%, rgba(245,158,11,.16), transparent 45%),
+                    linear-gradient(180deg, #fafaf7 0%, #fff 100%);
+
+  /* Shadows — soft, not harsh */
+  --shadow-sm: 0 1px 2px rgba(16,24,40,0.04), 0 1px 3px rgba(16,24,40,0.06);
+  --shadow-md: 0 4px 8px -2px rgba(16,24,40,0.06), 0 12px 24px -6px rgba(16,24,40,0.08);
+  --shadow-lg: 0 12px 16px -4px rgba(16,24,40,0.06), 0 24px 48px -12px rgba(16,24,40,0.14);
+  --shadow-brand: 0 8px 24px -6px rgba(16,185,129,0.35);
+
+  /* Radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+}
+
+/* Dark tokens — applied only when <html data-theme="dark">. An inline script
+   in layout.js sets the attribute before paint based on cookie + system
+   preference, so there's no light-to-dark flash. */
+:root[data-theme="dark"] {
+  --surface-0: #0b0d0c;
+  --surface-1: #131816;
+  --surface-2: #1a201d;
+  --border:    #232a26;
+  --fg:        #f4f4f2;
+  --fg-muted:  #a8a29e;
+  --hero-gradient: radial-gradient(circle at 15% 20%, rgba(16,185,129,.18), transparent 45%),
+                   radial-gradient(circle at 85% 70%, rgba(245,158,11,.14), transparent 45%),
+                   linear-gradient(180deg, #0b0d0c 0%, #131816 100%);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 8px 24px -6px rgba(0,0,0,0.4);
+  --shadow-lg: 0 24px 48px -12px rgba(0,0,0,0.55);
+  --shadow-brand: 0 8px 24px -6px rgba(16,185,129,0.5);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--surface-0);
+  --color-foreground: var(--fg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: var(--surface-0);
+  color: var(--fg);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Native-app feel on iOS — no double-tap zoom on buttons */
+button, a {
+  touch-action: manipulation;
+}
+
+/* iOS safe-area utilities (notch + home indicator) */
+.safe-top    { padding-top: max(env(safe-area-inset-top), 0px); }
+.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
+.pb-nav      { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem); }
+
+@supports (padding: max(0px)) {
+  /* Make the bottom-nav itself sit above the home indicator */
+  .bottom-nav-pad { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+}
+
+/* Brand surfaces & gradients (Tailwind v4 lets you reference vars directly) */
+.bg-hero        { background: var(--hero-gradient); }
+.bg-brand       { background: var(--brand-gradient); }
+.text-brand     { color: var(--brand-600); }
+.shadow-card    { box-shadow: var(--shadow-md); }
+.shadow-lift    { box-shadow: var(--shadow-lg); }
+.shadow-brand   { box-shadow: var(--shadow-brand); }
+
+/* Glass surface (used in sticky headers/nav) */
+.surface-glass {
+  background: color-mix(in srgb, var(--surface-1) 78%, transparent);
+  backdrop-filter: saturate(160%) blur(14px);
+  -webkit-backdrop-filter: saturate(160%) blur(14px);
+  border-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* Card primitive (use in JSX with class="card") */
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+}
+.card-interactive:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand-500) 30%, var(--border));
+}
+
+/* Brand pill button */
+.btn-brand {
+  background: var(--brand-gradient);
+  color: white;
+  box-shadow: var(--shadow-brand);
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.btn-brand:hover { transform: translateY(-1px); }
+.btn-brand:active { transform: translateY(0); opacity: .92; }
+
+/* Soft button (secondary) */
+.btn-soft {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  transition: background .15s ease, border-color .15s ease;
+}
+.btn-soft:hover {
+  background: color-mix(in srgb, var(--brand-50) 50%, var(--surface-2));
+  border-color: color-mix(in srgb, var(--brand-500) 35%, var(--border));
+}
+
+/* Subtle reveal on scroll/page-in */
+@keyframes mindset-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: mindset-rise .35s ease-out both; }
+
+/* Polished focus ring (a11y) */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Native input/textarea — softer, brand-aware focus */
+.input,
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]),
+select,
+textarea {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg);
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-500) 20%, transparent);
+}
+
+/* Scrollbars — slim, brand-aware */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--fg-muted) 35%, transparent);
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--brand-500) 60%, transparent);
 }

@@ -1,0 +1,575 @@
+// =============================================================================
+// Mindset App — Schema for French local direct tax management
+// Covers all 7 phases:
+//  1. Sales presentation & assisted/standalone signup (with QR + sales rep ref)
+//  2. Email verification & first-login tutorial
+//  3. Document upload, contract & mandate prep, e-signature, case activation
+//  4. Mission start & additional documents
+//  5. Internal analysis & 3-branch decision
+//  6. Administrative result, billing, payment tracking
+//  7. Loyalty, annual reminders, referrals, history
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+// Prisma 7 removed the `url` property here. The connection URL for migrate
+// lives in prisma.config.ts (datasource.url -> DIRECT_URL); the runtime
+// PrismaClient uses the driver adapter with DATABASE_URL — see src/lib/prisma.js.
+datasource db {
+  provider = "postgresql"
+}
+
+// -----------------------------------------------------------------------------
+// Roles & users
+// -----------------------------------------------------------------------------
+enum Role {
+  USER         // Client (taxpayer)
+  EMPLOYEE     // Sales rep / case manager — permissions[] gates each action
+  ADMIN        // All day-to-day power; grants permissions to employees
+  SUPER_ADMIN  // Head of company / break-glass — can do anything, manage admins
+}
+
+enum Locale {
+  fr
+  en
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  phone         String?
+  role          Role     @default(USER)
+  locale        Locale   @default(fr)
+
+  // Deactivation — when false, the user cannot log in and their existing
+  // sessions are rejected. ADMIN-only toggle. Default true.
+  active        Boolean  @default(true)
+  deactivatedAt DateTime?
+  deactivatedBy String?
+
+  // Granular permission keys (see src/lib/permissions.js). Only meaningful
+  // for EMPLOYEE — ADMIN and SUPER_ADMIN implicitly have everything.
+  permissions   String[] @default([])
+
+  // Email verification (Phase 2)
+  emailVerified DateTime?
+  verifyToken   String?   @unique
+  verifyExpires DateTime?
+
+  // Password reset
+  resetToken    String?   @unique
+  resetExpires  DateTime?
+
+  // First-login tutorial flag (Phase 2)
+  firstLoginTutorialSeen Boolean @default(false)
+
+  // Phase 1 — Sales rep reference. A client points at their reference rep;
+  // a rep's referenceRep is null. Self-referencing relation.
+  referenceRepId String?
+  referenceRep   User?    @relation("Rep", fields: [referenceRepId], references: [id], onDelete: SetNull)
+  referredUsers  User[]   @relation("Rep")
+
+  // Phase 7 — referral / parrainage (client-to-client)
+  referralCode  String?  @unique // shareable code (also used in QR)
+  referredById  String?
+  referredBy    User?    @relation("Referrer", fields: [referredById], references: [id], onDelete: SetNull)
+  referrals     User[]   @relation("Referrer")
+
+  // Optional — company / SCI for B2B clients
+  companyName   String?
+  siret         String?
+
+  // Relations
+  cases             TaxCase[]            @relation("Owner")
+  managedCases      TaxCase[]            @relation("Manager")
+  caseAssignments   CaseAssignment[]     @relation("CaseAssignments")
+  uploadedDocs      Document[]
+  notifications     Notification[]
+  sessions          Session[]
+  activityLogs      ActivityLog[]
+  comments          Comment[]
+  presentationLinks PresentationLink[]
+  invoicesAsClient  Invoice[]            @relation("InvoiceClient")
+  invoicesIssued    Invoice[]            @relation("InvoiceIssuer")
+  pushSubscriptions PushSubscription[]
+  passkeys          Passkey[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+  @@index([referenceRepId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 1 — Presentation content (locked, centrally managed)
+// -----------------------------------------------------------------------------
+model PresentationSection {
+  id          String  @id @default(cuid())
+  slug        String  @unique         // e.g. "tax-basics", "reforms", "optimization", "fees"
+  order       Int
+  titleFr     String
+  titleEn     String
+  contentFr   String                  // markdown
+  contentEn   String                  // markdown
+  imageUrl    String?
+  isActive    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order])
+}
+
+// QR code share / tracking — each rep can have one or more shareable links
+model PresentationLink {
+  id        String   @id @default(cuid())
+  repId     String
+  rep       User     @relation(fields: [repId], references: [id], onDelete: Cascade)
+  slug      String   @unique          // short code embedded in QR
+  label     String?                   // e.g. "Salon 2026", "Mailing TF"
+  clicks    Int      @default(0)
+  signups   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([repId])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 3+ — Tax cases (one per tax notice = one contract + one mandate)
+// -----------------------------------------------------------------------------
+enum TaxType {
+  TF          // Taxe Foncière (property tax)
+  CFE         // Cotisation Foncière des Entreprises
+  AUDIT       // Audit / conformity mission (Phase 5 branch C)
+  OTHER
+}
+
+enum CaseStatus {
+  // Phase 3
+  DRAFT                 // client uploaded notice, no contract yet
+  CONTRACT_PREPARING    // company is drafting contract/mandate
+  AWAITING_SIGNATURE    // sent to client for signature
+  SIGNED                // contract + mandate signed
+  // Phase 4
+  ACTIVE                // mission started
+  AWAITING_DOCUMENTS    // additional docs requested from client
+  DOCUMENTS_RECEIVED
+  // Phase 5
+  ANALYZING
+  DECISION_PENDING
+  // Decision branches (Phase 5)
+  PROCEEDING            // company filing claim/update
+  NOT_PROCEEDING        // no optimization found
+  AUDIT_OFFERED         // upsell: audit/advisory mission
+  // Phase 6
+  ADMIN_RESPONSE        // received reply from tax administration
+  RESULT_DELIVERED
+  INVOICED
+  PAID
+  // Terminal states — set via the close flow
+  CLOSED                // finished successfully
+  STOPPED               // halted mid-process (with reason)
+  CANCELLED             // cancelled (with reason)
+}
+
+// Multi-employee assignment to a case. The case still has an optional primary
+// `managerId`; assignments[] adds the broader team that can act on it.
+model CaseAssignment {
+  id         String   @id @default(cuid())
+  caseId     String
+  case       TaxCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("CaseAssignments", fields: [userId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  assignedBy String?  // userId of who created the assignment
+
+  @@unique([caseId, userId])
+  @@index([userId])
+}
+
+model TaxCase {
+  id          String      @id @default(cuid())
+  reference   String      @unique         // human reference e.g. "TF-2025-0001"
+  ownerId     String                       // the client
+  owner       User        @relation("Owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  managerId   String?                      // assigned employee/admin
+  manager     User?       @relation("Manager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  taxType     TaxType
+  taxYear     Int
+  noticeDate  DateTime?         // exact date/time printed on the tax notice
+  status      CaseStatus  @default(DRAFT)
+
+  // Property / asset info captured during contract prep
+  propertyName    String?         // friendly name so a client can have many properties
+  propertyAddress String?
+  propertyCity    String?
+  propertyZip     String?
+  cadastralRef    String?
+  surface         Float?
+  useType         String?         // commercial, office, warehouse, ...
+  initialTaxAmount Decimal?       @db.Decimal(12, 2)
+
+  // Phase 5 — decision
+  decisionAt      DateTime?
+  decisionNote    String?         // explanation visible to client
+
+  // Phase 6 — administrative result
+  resultAt        DateTime?
+  resultSummary   String?
+  estimatedSavings   Decimal?    @db.Decimal(12, 2)
+  futureYearlyImpact Decimal?    @db.Decimal(12, 2)
+  yearsCovered    String?         // e.g. "2024-2025"
+
+  // Phase 6 — billing model snapshot
+  feeModel        String?         // "PERCENT" | "FLAT" | "AUDIT"
+  feePercent      Decimal?        @db.Decimal(5, 2)
+  feeFlatAmount   Decimal?        @db.Decimal(12, 2)
+
+  closedAt    DateTime?
+  // Explanation for STOPPED / CANCELLED / CLOSED (free text)
+  closeReason String?
+  archived    Boolean   @default(false)
+
+  // Relations
+  documents     Document[]
+  contract      Contract?
+  mandate       Mandate?
+  invoice       Invoice?
+  comments      Comment[]
+  activity      ActivityLog[]
+  notifications Notification[]
+  docRequests   DocumentRequest[]
+  analyses      Analysis[]
+  assignments   CaseAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([managerId])
+  @@index([status])
+  @@index([taxType, taxYear])
+}
+
+// -----------------------------------------------------------------------------
+// Documents (uploaded by client, by company, or generated)
+// -----------------------------------------------------------------------------
+enum DocumentKind {
+  TAX_NOTICE         // brought by client (Phase 3)
+  PROPERTY_PLAN
+  LEASE
+  PHOTO
+  CADASTRAL
+  ID_PROOF
+  COMPANY_PROOF
+  CONTRACT           // generated by company
+  MANDATE            // generated by company
+  SIGNED_DOC         // contract / mandate after signing
+  ADMIN_RESPONSE     // reply from tax administration
+  INVOICE
+  OTHER
+}
+
+enum StorageProvider {
+  LOCAL
+  S3
+}
+
+model Document {
+  id           String          @id @default(cuid())
+  caseId       String?
+  case         TaxCase?        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  uploadedById String
+  uploadedBy   User            @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  kind         DocumentKind
+  filename     String
+  mimeType     String
+  sizeBytes    Int
+  provider     StorageProvider @default(LOCAL)
+  storageKey   String          // path or S3 key
+  sha256       String?
+
+  // metadata
+  notes        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([caseId])
+  @@index([uploadedById])
+  @@index([kind])
+}
+
+// Phase 4 — additional documents requested by company
+model DocumentRequest {
+  id          String   @id @default(cuid())
+  caseId      String
+  case        TaxCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  label       String                 // e.g. "Property plan"
+  description String?
+  fulfilled   Boolean  @default(false)
+  fulfilledAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([caseId])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 3 — Contracts and mandates (1 per case, manually prepared)
+// -----------------------------------------------------------------------------
+enum SignatureStatus {
+  DRAFT
+  SENT
+  VIEWED
+  SIGNED
+  DECLINED
+  EXPIRED
+}
+
+model Contract {
+  id                 String          @id @default(cuid())
+  caseId             String          @unique
+  case               TaxCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  documentId         String?         // pointer to generated PDF
+  signedDocumentId   String?         // pointer to signed PDF
+  feeModel           String          // "PERCENT" | "FLAT" | "AUDIT"
+  feePercent         Decimal?        @db.Decimal(5, 2)
+  feeFlatAmount      Decimal?        @db.Decimal(12, 2)
+  signatureProvider  String?         // "docusign" | "stub"
+  signatureRequestId String?         // DocuSign envelope id
+  status             SignatureStatus @default(DRAFT)
+  sentAt             DateTime?
+  signedAt           DateTime?
+  expiresAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Mandate {
+  id                 String          @id @default(cuid())
+  caseId             String          @unique
+  case               TaxCase         @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  documentId         String?
+  signedDocumentId   String?
+  signatureProvider  String?
+  signatureRequestId String?
+  status             SignatureStatus @default(DRAFT)
+  sentAt             DateTime?
+  signedAt           DateTime?
+  expiresAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------------------------------------------------------
+// Phase 5 — Internal analysis
+// -----------------------------------------------------------------------------
+model Analysis {
+  id                   String   @id @default(cuid())
+  caseId               String
+  case                 TaxCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorId             String?
+  // axes
+  rentalValueReview    String?
+  surfaceCheck         String?
+  useClassification    String?
+  annexesNotes         String?
+  cadastralComparison  String?
+  legalChanges         String?
+  simulationNotes      String?
+  estimatedSavings     Decimal? @db.Decimal(12, 2)
+  yearsCovered         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([caseId])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 6 — Invoices & payments
+// -----------------------------------------------------------------------------
+enum InvoiceStatus {
+  ISSUED
+  AWAITING_PAYMENT
+  PAID
+  REMINDED_15
+  REMINDED_30
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id          String         @id @default(cuid())
+  number      String         @unique          // e.g. INV-2026-0001
+  caseId      String         @unique
+  case        TaxCase        @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  clientId    String
+  client      User           @relation("InvoiceClient", fields: [clientId], references: [id], onDelete: Cascade)
+  issuerId    String?
+  issuer      User?          @relation("InvoiceIssuer", fields: [issuerId], references: [id], onDelete: SetNull)
+
+  baseAmount   Decimal       @db.Decimal(12, 2)    // savings or flat base
+  feeModel     String        // PERCENT | FLAT | AUDIT
+  feePercent   Decimal?      @db.Decimal(5, 2)
+  amountHT     Decimal       @db.Decimal(12, 2)    // hors taxes
+  vatRate      Decimal       @db.Decimal(5, 2)     @default(20.00)
+  amountTTC    Decimal       @db.Decimal(12, 2)    // toutes taxes comprises
+
+  issuedAt     DateTime      @default(now())
+  dueAt        DateTime
+  paidAt       DateTime?
+  status       InvoiceStatus @default(ISSUED)
+
+  documentId   String?       // generated PDF
+
+  reminders    InvoiceReminder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
+}
+
+model InvoiceReminder {
+  id        String   @id @default(cuid())
+  invoiceId String
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  kind      String   // "DAY_15" | "DAY_30" | "FINAL"
+  sentAt    DateTime @default(now())
+
+  @@index([invoiceId])
+}
+
+// -----------------------------------------------------------------------------
+// Activity, comments, notifications
+// -----------------------------------------------------------------------------
+model ActivityLog {
+  id        String   @id @default(cuid())
+  caseId    String?
+  case      TaxCase? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String   // e.g. "case.created", "doc.uploaded", "status.changed"
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([caseId])
+  @@index([createdAt])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      TaxCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  internal  Boolean  @default(false)        // visible to staff only
+  createdAt DateTime @default(now())
+
+  @@index([caseId])
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  PUSH
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  caseId    String?
+  case      TaxCase? @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  channel   NotificationChannel @default(IN_APP)
+  titleKey  String              // i18n key
+  bodyKey   String?
+  params    Json?               // interpolation params for i18n
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, readAt])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 7 — Annual reminders & future services
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+// Passkeys — WebAuthn credentials for biometric login (Face ID, Touch ID,
+// Android fingerprint, Windows Hello). One user can register multiple
+// devices (phone, laptop, …).
+// -----------------------------------------------------------------------------
+model Passkey {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // credentialId is the WebAuthn credential ID (base64url string). Unique
+  // because every credential is unique across all relying parties.
+  credentialId    String   @unique
+  // The COSE public key returned by the authenticator (binary).
+  publicKey       Bytes
+  // Signature counter for replay protection.
+  counter         BigInt   @default(0)
+  // "platform" (phone/laptop biometric) or "cross-platform" (USB key etc).
+  transports      String[] @default([])
+  // Human-readable device label so the user can identify which device this is
+  // when revoking — e.g. "iPhone 14 (Safari)".
+  deviceName      String?
+  createdAt       DateTime @default(now())
+  lastUsedAt      DateTime?
+
+  @@index([userId])
+}
+
+// -----------------------------------------------------------------------------
+// Web Push — per-device subscription. One user can have multiple devices.
+// -----------------------------------------------------------------------------
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AnnualReminder {
+  id           String   @id @default(cuid())
+  userId       String
+  taxType      TaxType
+  year         Int
+  scheduledFor DateTime
+  sentAt       DateTime?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, taxType, year])
+}

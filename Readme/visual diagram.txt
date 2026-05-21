@@ -1,0 +1,49 @@
+┌─────────────────┐
+│      User       │  ← clients, employees, admins (one table, role field)
+│─────────────────│
+│ id              │
+│ email (unique)  │
+│ password (hash) │
+│ name            │
+│ phone           │
+│ role            │  ← USER / EMPLOYEE / ADMIN
+│ commercialId    │  ← who referred them (Samuel Duran etc.)
+│ createdAt       │
+└────────┬────────┘
+         │ (1 user → many docs, cases)
+         ▼
+┌─────────────────┐         ┌─────────────────┐
+│    Document     │────────▶│      Case       │  ← one tax = one case
+│─────────────────│         │─────────────────│
+│ id              │         │ id              │
+│ userId          │         │ userId          │
+│ fileUrl         │         │ taxType         │  ← TF / CFE
+│ fileName        │         │ taxYear         │
+│ docType         │         │ status          │  ← workflow states
+│ uploadedAt      │         │ contractSigned  │  ← gate for visibility
+└─────────────────┘         │ createdAt       │
+                            └────────┬────────┘
+                                     │
+                       ┌─────────────┴─────────────┐
+                       ▼                           ▼
+              ┌─────────────────┐         ┌─────────────────┐
+              │    Contract     │         │    Message      │
+              │─────────────────│         │─────────────────│
+              │ id              │         │ id              │
+              │ caseId          │         │ caseId          │
+              │ contractUrl     │         │ authorId        │
+              │ mandateUrl      │         │ content         │
+              │ signedAt        │         │ createdAt       │
+              │ yousignId       │         └─────────────────┘
+              └─────────────────┘
+                       
+              ┌─────────────────┐
+              │  Notification   │
+              │─────────────────│
+              │ id              │
+              │ userId          │  ← who sees it
+              │ type            │  ← NEW_DOC / CONTRACT_READY / etc.
+              │ message         │
+              │ read            │
+              │ createdAt       │
+              └─────────────────┘
