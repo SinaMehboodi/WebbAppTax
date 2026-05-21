@@ -1,0 +1,11 @@
+# Keep shell scripts and Gradle wrapper as LF so Linux CI can execute them
+# (Windows otherwise checks them in with CRLF which Linux can't run).
+*.sh        text eol=lf
+gradlew     text eol=lf
+gradlew.bat text eol=crlf
+
+# Treat all generated lock files / build files as text but never as line-ending
+# conflicts.
+package-lock.json text eol=lf
+*.gradle    text eol=lf
+*.kts       text eol=lf
