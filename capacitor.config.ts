@@ -3,37 +3,39 @@
 // Strategy: SamTaxco is a server-rendered Next.js app (server actions, API
 // routes, Prisma, auth, file uploads). It is NOT a static site, so we DON'T
 // bundle the web assets into the .apk — instead the native shell loads the
-// live URL over HTTPS via `server.url`. This lets us push web updates
-// instantly without re-submitting the APK.
+// live URL via `server.url`. This lets us push web updates instantly
+// without re-submitting the APK.
 //
-// For local development on an Android emulator, override server.url with
-// "http://10.0.2.2:3000" (the emulator's loopback to the host machine) and
-// enable cleartext temporarily. For production, set SAMTAXCO_PROD_URL.
+// Where the WebView loads from:
+//   1. SAMTAXCO_PROD_URL env var (CI sets this from a GitHub secret)
+//   2. Falls back to the LAN dev URL below so a debug APK built without any
+//      env override loads your local `npm run dev` server.
+//
+// Cleartext (http://) is auto-enabled when the resolved URL is http://.
+// HTTPS URLs (production) keep cleartext off.
 import type { CapacitorConfig } from "@capacitor/cli";
 
-const PROD_URL = process.env.SAMTAXCO_PROD_URL || "https://samtaxco.app";
-const isDev = process.env.SAMTAXCO_USE_DEV === "1";
+// Default for "I just want to test the APK on my phone over Wi-Fi" — the dev
+// server running on the PC. Change to your production URL via the
+// SAMTAXCO_PROD_URL secret in GitHub when you deploy.
+const DEFAULT_URL = "http://192.168.178.22:3000";
+
+const URL = process.env.SAMTAXCO_PROD_URL || DEFAULT_URL;
+const isCleartext = URL.startsWith("http://");
 
 const config: CapacitorConfig = {
   appId: "app.samtaxco",
   appName: "SamTaxco",
   // webDir is required by Capacitor even when server.url is set — point it at
-  // /public so it ships the app icon, manifest and offline fallback page.
+  // /public so it ships the app icon and manifest.
   webDir: "public",
   server: {
-    // Where the WebView loads its content. Change SAMTAXCO_PROD_URL or
-    // SAMTAXCO_USE_DEV at build time to point at staging/dev.
-    url: isDev ? "http://10.0.2.2:3000" : PROD_URL,
-    // Required for HTTP (dev) URLs. Always false in production.
-    cleartext: isDev,
-    // Make the WebView treat the URL as same-origin so cookies, push,
-    // and biometric (WebAuthn) all behave like the regular web site.
+    url: URL,
+    cleartext: isCleartext,
     androidScheme: "https",
   },
   android: {
-    // Allow WebAuthn / passkey requests inside the WebView.
     allowMixedContent: false,
-    // Show a brief splash while the WebView loads the URL.
     backgroundColor: "#10b981",
   },
   plugins: {
