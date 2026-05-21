@@ -1,4 +1,4 @@
-# Mindset — local direct tax management (FR)
+# Mindset
 
 Web app implementing the 7-phase customer journey for managing and optimizing
 French local direct taxes (Taxe Foncière, CFE). Built on Next.js 16 + Postgres
