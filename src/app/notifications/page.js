@@ -6,6 +6,7 @@ import { getDictionary } from "@/lib/dictionary";
 import MarkAllReadButton from "./MarkAllReadButton";
 import PushOptIn from "@/components/PushOptIn";
 import InstallPwaPrompt from "@/components/InstallPwaPrompt";
+import AdminBanner from "@/components/AdminBanner";
 
 export default async function NotificationsPage() {
   const user = await getCurrentUser();
@@ -19,7 +20,9 @@ export default async function NotificationsPage() {
   const unread = items.filter((i) => !i.readAt).length;
 
   return (
-    <div className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 sm:py-8 space-y-5 animate-rise">
+    <>
+      <AdminBanner role={user.role} firstName={user.firstName} lastName={user.lastName} locale={locale} containerClass="max-w-3xl" topInset={false} />
+      <div className="flex-1 max-w-3xl w-full mx-auto px-4 py-6 sm:py-8 space-y-5 animate-rise">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{t("notifications.title")}</h1>
@@ -88,5 +91,6 @@ export default async function NotificationsPage() {
         </ul>
       )}
     </div>
+    </>
   );
 }

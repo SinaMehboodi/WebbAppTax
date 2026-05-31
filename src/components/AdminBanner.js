@@ -1,9 +1,16 @@
 "use client";
 
-// Shared back-office banner shown at the top of EVERY /admin page.
-// It is page-agnostic: just a warm greeting for the logged-in user + a live
-// date/time + the role context. The page's own NAME is a heading rendered
-// BELOW this banner by each page (so it isn't duplicated inside the banner).
+// Shared greeting banner for back-office pages AND the shared Notifications page.
+// Page-agnostic: "Hello <name>" + live date/time + role context. The page's own
+// NAME is rendered as a heading BELOW this banner (not inside it).
+//
+// Props:
+//   role, firstName, lastName, locale — the logged-in user
+//   containerClass — max-width of the inner text so it lines up with the page
+//                    content beneath it (default max-w-6xl; notifications = 3xl)
+//   topInset — true (admin layout): the banner is the top-most element, so it
+//              reserves the status-bar safe-area + room for the floating ☰ button.
+//              false: the page already has the top Header, so sit flush below it.
 import { useEffect, useState } from "react";
 
 const ROLE_BANNER = {
@@ -18,13 +25,14 @@ const ROLE_LABEL = {
   en: { SUPER_ADMIN: "Super admin",          ADMIN: "Admin",          EMPLOYEE: "Employee",      USER: "Client" },
 };
 
-export default function AdminBanner({ role, firstName, lastName, locale }) {
+export default function AdminBanner({ role, firstName, lastName, locale, containerClass = "max-w-6xl", topInset = true }) {
   const fr = locale === "fr";
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  const isStaff = role === "ADMIN" || role === "EMPLOYEE" || role === "SUPER_ADMIN";
   const roleLabel = (ROLE_LABEL[fr ? "fr" : "en"] || ROLE_LABEL.en)[role] || "";
 
-  // Live date + time. Rendered client-side only (starts empty on SSR + first
-  // client render → no hydration mismatch) and refreshed every 30s.
+  // Live date + time, client-rendered (empty on SSR + first client render → no
+  // hydration mismatch) and refreshed every 30s.
   const [now, setNow] = useState(null);
   useEffect(() => {
     const tick = () => setNow(new Date());
@@ -40,7 +48,7 @@ export default function AdminBanner({ role, firstName, lastName, locale }) {
 
   return (
     <header
-      className="relative overflow-hidden text-white shadow-lift rounded-b-3xl safe-top"
+      className={`relative overflow-hidden text-white shadow-lift rounded-b-3xl ${topInset ? "safe-top" : ""}`}
       style={{ background: ROLE_BANNER[role] || ROLE_BANNER.EMPLOYEE }}
     >
       <div
@@ -51,16 +59,16 @@ export default function AdminBanner({ role, firstName, lastName, locale }) {
             "radial-gradient(500px circle at 10% 90%, rgba(255,255,255,.18), transparent 55%)",
         }}
       />
-      <div className="relative px-5 sm:px-7 pb-5 sm:pb-6">
-        {/* Reserve room for the floating ☰ button so it never covers the text. */}
-        <div className="h-14 md:hidden" />
+      <div className={`relative ${containerClass} mx-auto px-5 sm:px-7 pb-5 sm:pb-6 ${topInset ? "" : "pt-5"}`}>
+        {/* Reserve room for the floating ☰ button (admin layout only). */}
+        {topInset && <div className="h-14 md:hidden" />}
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
           {fr ? "Bonjour" : "Hello"} {fullName}
         </h1>
         <p className="text-white/90 text-sm mt-1 min-h-[1.25rem] tabular-nums first-letter:uppercase">
           {stamp}
         </p>
-        {roleLabel && (
+        {isStaff && roleLabel && (
           <p className="text-white/70 text-[11px] mt-1.5 uppercase tracking-widest">
             Back-office · {roleLabel}
           </p>
