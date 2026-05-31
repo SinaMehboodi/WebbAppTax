@@ -60,7 +60,7 @@ export default async function AdminLayout({ children }) {
     <div className="flex-1 flex min-h-0">
       <AdminSidebar user={safeUser} labels={labels} locale={locale} unreadCount={unreadCount} canSupport={canSupport} supportOpen={supportOpen} />
       <div className="flex-1 min-w-0 overflow-x-hidden safe-bottom">
-        <AdminBanner role={user.role} firstName={user.firstName} locale={locale} labels={labels} />
+        <AdminBanner role={user.role} firstName={user.firstName} lastName={user.lastName} locale={locale} />
         {children}
       </div>
     </div>

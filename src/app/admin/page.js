@@ -38,6 +38,13 @@ export default async function AdminHome() {
 
   return (
     <div className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-8 space-y-6 animate-rise">
+      <header>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{t("admin.workflow")}</h1>
+        <p className="text-sm text-[var(--fg-muted)] mt-1">
+          {fr ? "Vue d'ensemble des dossiers et de la charge de travail." : "Overview of cases and workload."}
+        </p>
+      </header>
+
       {/* Big KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiBig label={fr ? "Clients" : "Clients"} value={users} href="/admin/users?role=USER" tone="emerald" icon="👤" />

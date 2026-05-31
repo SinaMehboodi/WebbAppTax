@@ -1,10 +1,10 @@
 "use client";
 
-// Shared back-office banner shown at the top of EVERY /admin page (not just the
-// workflow board). Role-tinted gradient + greeting + current page name + date.
-// Full-bleed so it sits cleanly behind the phone status bar; a top spacer keeps
-// the floating ☰ menu button from overlapping the text on mobile.
-import { usePathname } from "next/navigation";
+// Shared back-office banner shown at the top of EVERY /admin page.
+// It is page-agnostic: just a warm greeting for the logged-in user + a live
+// date/time + the role context. The page's own NAME is a heading rendered
+// BELOW this banner by each page (so it isn't duplicated inside the banner).
+import { useEffect, useState } from "react";
 
 const ROLE_BANNER = {
   SUPER_ADMIN: "linear-gradient(135deg,#fb7185 0%,#f43f5e 50%,#e11d48 100%)", // coral
@@ -13,30 +13,31 @@ const ROLE_BANNER = {
   USER:        "linear-gradient(135deg,#38bdf8 0%,#0ea5e9 50%,#0284c7 100%)", // blue
 };
 
-// Longest-prefix match → the human label for the current admin route.
-function currentTitle(pathname, labels) {
-  const map = [
-    ["/admin/inbox",        labels.inbox],
-    ["/admin/cases",        labels.cases],
-    ["/admin/reports",      labels.reports],
-    ["/admin/users",        labels.users],
-    ["/admin/presentation", labels.presentation],
-    ["/admin/support",      labels.support],
-    ["/admin",              labels.workflow],
-  ];
-  for (const [href, label] of map) {
-    if (pathname === href || pathname.startsWith(href + "/")) return label || labels.backOffice;
-  }
-  return labels.backOffice;
-}
+const ROLE_LABEL = {
+  fr: { SUPER_ADMIN: "Super-administrateur", ADMIN: "Administrateur", EMPLOYEE: "Collaborateur", USER: "Client" },
+  en: { SUPER_ADMIN: "Super admin",          ADMIN: "Admin",          EMPLOYEE: "Employee",      USER: "Client" },
+};
 
-export default function AdminBanner({ role, firstName, locale, labels }) {
-  const pathname = usePathname();
+export default function AdminBanner({ role, firstName, lastName, locale }) {
   const fr = locale === "fr";
-  const title = currentTitle(pathname, labels);
-  const dateStr = new Date().toLocaleDateString(fr ? "fr-FR" : "en-US", {
-    weekday: "long", day: "numeric", month: "long",
-  });
+  const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  const roleLabel = (ROLE_LABEL[fr ? "fr" : "en"] || ROLE_LABEL.en)[role] || "";
+
+  // Live date + time. Rendered client-side only (starts empty on SSR + first
+  // client render → no hydration mismatch) and refreshed every 30s.
+  const [now, setNow] = useState(null);
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, []);
+  const stamp = now
+    ? now.toLocaleString(fr ? "fr-FR" : "en-US", {
+        weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
+      })
+    : "";
+
   return (
     <header
       className="relative overflow-hidden text-white shadow-lift rounded-b-3xl safe-top"
@@ -51,13 +52,19 @@ export default function AdminBanner({ role, firstName, locale, labels }) {
         }}
       />
       <div className="relative px-5 sm:px-7 pb-5 sm:pb-6">
-        {/* Reserve room for the floating ☰ button so it never covers the title. */}
+        {/* Reserve room for the floating ☰ button so it never covers the text. */}
         <div className="h-14 md:hidden" />
-        <p className="text-xs uppercase tracking-widest text-white/80">{title}</p>
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mt-0.5">
-          {fr ? "Bonjour" : "Hello"} {firstName || ""}
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
+          {fr ? "Bonjour" : "Hello"} {fullName}
         </h1>
-        <p className="text-white/90 text-sm mt-1">{dateStr}</p>
+        <p className="text-white/90 text-sm mt-1 min-h-[1.25rem] tabular-nums first-letter:uppercase">
+          {stamp}
+        </p>
+        {roleLabel && (
+          <p className="text-white/70 text-[11px] mt-1.5 uppercase tracking-widest">
+            Back-office · {roleLabel}
+          </p>
+        )}
       </div>
     </header>
   );
