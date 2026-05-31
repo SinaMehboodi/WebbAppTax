@@ -30,6 +30,11 @@ on:
         default: "false"
         type: choice
         options: ["false", "true"]
+      dev_url:
+        description: "URL the APK should load (e.g. your PC LAN dev server: http://192.168.178.22:3000). Blank = production."
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -41,7 +46,9 @@ jobs:
       contents: read
 
     env:
-      SAMTAXCO_PROD_URL: ${{ secrets.SAMTAXCO_PROD_URL || 'https://samtaxco.app' }}
+      # A manual run can override the target URL (e.g. a LAN dev server for
+      # on-device testing); otherwise use the secret, falling back to the site.
+      SAMTAXCO_PROD_URL: ${{ github.event.inputs.dev_url || secrets.SAMTAXCO_PROD_URL || 'https://samtaxco.app' }}
 
     steps:
       - name: Checkout
