@@ -7,18 +7,12 @@ import LogoutButton from "./LogoutButton";
 import HideOnAdmin from "./HideOnAdmin";
 import HideOnPath from "./HideOnPath";
 import ThemeSwitcher from "./ThemeSwitcher";
+import BrandLogo from "./BrandLogo";
 
 function BrandMark() {
   return (
     <Link href="/" className="flex items-center gap-2 group">
-      <span
-        className="relative inline-flex h-8 w-8 items-center justify-center rounded-2xl text-white font-semibold text-sm shadow-brand"
-        style={{ background: "var(--brand-gradient)" }}
-        aria-hidden
-      >
-        <span className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition bg-white/10" />
-        S
-      </span>
+      <BrandLogo className="h-8 w-8" />
       <span className="font-semibold tracking-tight hidden sm:inline">SamTaxco</span>
     </Link>
   );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import ThemeSwitcher from "./ThemeSwitcher";
+import BrandLogo from "./BrandLogo";
 
 export default function AdminSidebar({ user, labels, locale, unreadCount = 0, canSupport = false, supportOpen = 0 }) {
   const pathname = usePathname();
@@ -61,7 +62,7 @@ export default function AdminSidebar({ user, labels, locale, unreadCount = 0, ca
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="md:hidden fixed left-3 z-30 rounded-full btn-brand w-10 h-10 text-lg shadow-brand"
+        className={`fixed left-3 z-30 rounded-full btn-brand w-10 h-10 text-lg shadow-brand ${open ? "hidden" : "md:hidden"}`}
         style={{ top: "calc(var(--safe-top) + 0.5rem)" }}
         aria-label="Menu"
       >
@@ -76,17 +77,22 @@ export default function AdminSidebar({ user, labels, locale, unreadCount = 0, ca
           surface-glass border-r flex flex-col transition-transform safe-top
         `}
       >
-        <div className="px-5 pt-5 pb-3">
-          <Link href="/admin" className="flex items-center gap-2">
-            <span
-              className="inline-flex h-9 w-9 items-center justify-center rounded-2xl text-white font-semibold text-sm shadow-brand"
-              style={{ background: "var(--brand-gradient)" }}
-            >
-              S
+        <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-2">
+          <Link href="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2.5 min-w-0">
+            <BrandLogo className="h-9 w-9 shrink-0" />
+            <span className="min-w-0">
+              <span className="block font-semibold tracking-tight truncate">SamTaxco</span>
+              <span className="block text-xs text-[var(--fg-muted)] truncate">{labels.backOffice}</span>
             </span>
-            <span className="font-semibold tracking-tight">SamTaxco</span>
           </Link>
-          <div className="text-xs text-[var(--fg-muted)] mt-1">{labels.backOffice}</div>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Close menu"
+            className="md:hidden -mr-1 rounded-lg p-1.5 text-[var(--fg-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--fg)]"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
         </div>
 
         <nav className="px-3 py-2 space-y-3 flex-1 overflow-y-auto">
@@ -132,7 +138,7 @@ export default function AdminSidebar({ user, labels, locale, unreadCount = 0, ca
           ))}
         </nav>
 
-        <div className="px-5 py-4 border-t border-[var(--border)] text-sm">
+        <div className="px-5 pt-4 border-t border-[var(--border)] text-sm" style={{ paddingBottom: "calc(var(--safe-bottom) + 0.6rem)" }}>
           <div className="font-medium truncate">
             {user.firstName} {user.lastName}
           </div>

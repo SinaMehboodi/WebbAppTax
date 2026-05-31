@@ -1,23 +1,17 @@
 "use client";
 
-// Shared greeting banner for back-office pages AND the shared Notifications page.
-// Page-agnostic: "Hello <name>" + live date/time + role context. The page's own
-// NAME is rendered as a heading BELOW this banner (not inside it).
-//
-// Props:
-//   role, firstName, lastName, locale — the logged-in user
-//   containerClass — max-width of the inner text so it lines up with the page
-//                    content beneath it (default max-w-6xl; notifications = 3xl)
-//   topInset — true (admin layout): the banner is the top-most element, so it
-//              reserves the status-bar safe-area + room for the floating ☰ button.
-//              false: the page already has the top Header, so sit flush below it.
+// Greeting banner for back-office pages AND the shared Notifications page.
+// Modern, glassy treatment: initials avatar + "Hello <name>", glass chips for a
+// live date & time and the role, a mesh-gradient backdrop and a faint brand
+// watermark. Page-agnostic — the page's own NAME is a heading BELOW the banner.
 import { useEffect, useState } from "react";
+import BrandLogo from "./BrandLogo";
 
 const ROLE_BANNER = {
-  SUPER_ADMIN: "linear-gradient(135deg,#fb7185 0%,#f43f5e 50%,#e11d48 100%)", // coral
-  ADMIN:       "linear-gradient(135deg,#8b5cf6 0%,#7c3aed 50%,#6d28d9 100%)", // violet
-  EMPLOYEE:    "linear-gradient(135deg,#2dd4bf 0%,#14b8a6 50%,#0d9488 100%)", // teal
-  USER:        "linear-gradient(135deg,#38bdf8 0%,#0ea5e9 50%,#0284c7 100%)", // blue
+  SUPER_ADMIN: "linear-gradient(135deg,#fb7185 0%,#f43f5e 48%,#be123c 100%)", // coral
+  ADMIN:       "linear-gradient(135deg,#8b5cf6 0%,#7c3aed 48%,#5b21b6 100%)", // violet
+  EMPLOYEE:    "linear-gradient(135deg,#2dd4bf 0%,#0d9488 48%,#0f766e 100%)", // teal
+  USER:        "linear-gradient(135deg,#38bdf8 0%,#0ea5e9 48%,#0369a1 100%)", // blue
 };
 
 const ROLE_LABEL = {
@@ -28,11 +22,12 @@ const ROLE_LABEL = {
 export default function AdminBanner({ role, firstName, lastName, locale, containerClass = "max-w-6xl", topInset = true }) {
   const fr = locale === "fr";
   const fullName = [firstName, lastName].filter(Boolean).join(" ");
+  const initials = ((firstName?.[0] || "") + (lastName?.[0] || "")).toUpperCase() || "•";
   const isStaff = role === "ADMIN" || role === "EMPLOYEE" || role === "SUPER_ADMIN";
   const roleLabel = (ROLE_LABEL[fr ? "fr" : "en"] || ROLE_LABEL.en)[role] || "";
 
-  // Live date + time, client-rendered (empty on SSR + first client render → no
-  // hydration mismatch) and refreshed every 30s.
+  // Live date + time, client-only (empty on SSR + first client render → no
+  // hydration mismatch), refreshed every 30s.
   const [now, setNow] = useState(null);
   useEffect(() => {
     const tick = () => setNow(new Date());
@@ -40,39 +35,62 @@ export default function AdminBanner({ role, firstName, lastName, locale, contain
     const id = setInterval(tick, 30_000);
     return () => clearInterval(id);
   }, []);
-  const stamp = now
-    ? now.toLocaleString(fr ? "fr-FR" : "en-US", {
-        weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit",
-      })
-    : "";
+  const dateStr = now ? now.toLocaleDateString(fr ? "fr-FR" : "en-US", { weekday: "long", day: "numeric", month: "long" }) : "";
+  const timeStr = now ? now.toLocaleTimeString(fr ? "fr-FR" : "en-US", { hour: "2-digit", minute: "2-digit" }) : "";
 
   return (
     <header
-      className={`relative overflow-hidden text-white shadow-lift rounded-b-3xl ${topInset ? "safe-top" : ""}`}
+      className={`relative isolate overflow-hidden text-white rounded-b-[1.75rem] shadow-lift ${topInset ? "safe-top" : ""}`}
       style={{ background: ROLE_BANNER[role] || ROLE_BANNER.EMPLOYEE }}
     >
+      {/* mesh highlights */}
       <div
-        className="absolute inset-0 opacity-30 pointer-events-none"
+        className="absolute inset-0 -z-10 opacity-40 pointer-events-none"
         style={{
           backgroundImage:
-            "radial-gradient(400px circle at 80% 20%, rgba(255,255,255,.25), transparent 50%)," +
-            "radial-gradient(500px circle at 10% 90%, rgba(255,255,255,.18), transparent 55%)",
+            "radial-gradient(620px circle at 88% 6%, rgba(255,255,255,.30), transparent 46%)," +
+            "radial-gradient(520px circle at 4% 104%, rgba(255,255,255,.16), transparent 52%)",
         }}
       />
-      <div className={`relative ${containerClass} mx-auto px-5 sm:px-7 pb-5 sm:pb-6 ${topInset ? "" : "pt-5"}`}>
-        {/* Reserve room for the floating ☰ button (admin layout only). */}
+      {/* faint brand watermark */}
+      <BrandLogo badge={false} className="absolute -z-10 -right-5 -bottom-8 h-44 w-44 text-white/10 pointer-events-none" />
+
+      <div className={`relative ${containerClass} mx-auto px-4 pb-5 sm:pb-6 ${topInset ? "" : "pt-5"}`}>
+        {/* Reserve room for the floating menu button on mobile. */}
         {topInset && <div className="h-14 md:hidden" />}
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          {fr ? "Bonjour" : "Hello"} {fullName}
-        </h1>
-        <p className="text-white/90 text-sm mt-1 min-h-[1.25rem] tabular-nums first-letter:uppercase">
-          {stamp}
-        </p>
-        {isStaff && roleLabel && (
-          <p className="text-white/70 text-[11px] mt-1.5 uppercase tracking-widest">
-            Back-office · {roleLabel}
-          </p>
-        )}
+
+        <div className="flex items-center gap-3.5">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur text-lg font-semibold tracking-tight">
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
+              {isStaff ? "Back-office" : (fr ? "Espace client" : "Client area")}
+            </p>
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight leading-tight truncate">
+              {fr ? "Bonjour" : "Hello"} {fullName}
+            </h1>
+          </div>
+        </div>
+
+        <div className="mt-3.5 flex flex-wrap items-center gap-2 text-white/90">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 ring-1 ring-white/15 px-2.5 py-1 text-xs backdrop-blur">
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+              <path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
+            </svg>
+            <span className="capitalize">{dateStr || " "}</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/12 ring-1 ring-white/15 px-2.5 py-1 text-xs tabular-nums backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_2px_rgba(110,231,183,.55)]" />
+            {timeStr || " "}
+          </span>
+          {isStaff && roleLabel && (
+            <span className="inline-flex items-center rounded-full bg-white/15 ring-1 ring-white/20 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide backdrop-blur">
+              {roleLabel}
+            </span>
+          )}
+        </div>
       </div>
     </header>
   );
