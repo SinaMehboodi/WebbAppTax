@@ -38,6 +38,7 @@ export default async function AdminLayout({ children }) {
     inbox: t("admin.inbox"),
     cases: t("admin.cases"),
     reports: t("admin.reports"),
+    reviews: t("reviews.nav"),
     users: t("admin.users"),
     presentation: t("admin.presentation"),
     support: t("admin.support"),

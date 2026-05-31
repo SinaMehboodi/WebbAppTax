@@ -263,6 +263,7 @@ model TaxCase {
   docRequests   DocumentRequest[]
   analyses      Analysis[]
   assignments   CaseAssignment[]
+  review        Review?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -408,6 +409,20 @@ model Analysis {
   updatedAt DateTime @updatedAt
 
   @@index([caseId])
+}
+
+// -----------------------------------------------------------------------------
+// Phase 7 — Client satisfaction (5-star review after a successful close)
+// -----------------------------------------------------------------------------
+model Review {
+  id        String   @id @default(cuid())
+  caseId    String   @unique
+  case      TaxCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  rating    Int                     // 1..5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([rating])
 }
 
 // -----------------------------------------------------------------------------

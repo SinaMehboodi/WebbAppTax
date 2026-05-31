@@ -20,6 +20,7 @@ export default function AdminSidebar({ user, labels, locale, unreadCount = 0, ca
         { href: "/admin/inbox",   label: labels.inbox,    icon: "📨", c: 5 },
         { href: "/admin/cases",   label: labels.cases,    icon: "📁", c: 6 },
         { href: "/admin/reports", label: labels.reports,  icon: "📈", c: 7 },
+        { href: "/admin/reviews", label: labels.reviews,  icon: "⭐", c: 2 },
       ],
     },
     {

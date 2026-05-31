@@ -17,6 +17,7 @@ import CommentStream from "@/components/CommentStream";
 import AdditionalUpload from "@/components/AdditionalUpload";
 import DocumentTile from "@/components/DocumentTile";
 import { buildDocLabels } from "@/lib/docLabels";
+import ReviewForm from "@/components/ReviewForm";
 
 // A client can delete documents they uploaded as long as the case isn't
 // past Phase 4. Server enforces the same rule on DELETE.
@@ -47,6 +48,7 @@ export default async function CaseDetail({ params }) {
       activity: { orderBy: { createdAt: "desc" }, take: 40, include: { actor: true } },
       comments: { where: { internal: false }, orderBy: { createdAt: "asc" }, include: { author: true } },
       invoice: true,
+      review: true,
       manager: { select: { firstName: true, lastName: true } },
       assignments: {
         orderBy: { assignedAt: "asc" },
@@ -64,6 +66,11 @@ export default async function CaseDetail({ params }) {
     .filter((a) => a.action === "signature.audit" && a.details)
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   const team = c.assignments.map((a) => a.user);
+  // The tax administration's decision letter is pinned to the top of the docs.
+  const letter = c.documents.find((d) => d.kind === "ADMIN_RESPONSE");
+  const sortedDocs = letter
+    ? [...c.documents.filter((d) => d.kind === "ADMIN_RESPONSE"), ...c.documents.filter((d) => d.kind !== "ADMIN_RESPONSE")]
+    : c.documents;
 
   return (
     <div className="flex-1 max-w-4xl w-full mx-auto px-4 py-6 sm:py-8 space-y-5 animate-rise">
@@ -90,6 +97,55 @@ export default async function CaseDetail({ params }) {
           <StatusBadge status={c.status} t={t} size="lg" audience="client" />
         </div>
       </header>
+
+      {/* Successful close — celebration + pinned decision letter + review */}
+      {c.status === "CLOSED" && (
+        <section
+          className="relative overflow-hidden rounded-2xl p-6 text-white shadow-lift"
+          style={{ background: "linear-gradient(135deg,#10b981 0%,#059669 50%,#0d9488 100%)" }}
+        >
+          <div className="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-white/15 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-white/20 grid place-items-center text-2xl">🎉</div>
+              <div>
+                <p className="text-[11px] uppercase tracking-widest text-white/80">{t("success.kicker")}</p>
+                <h2 className="text-xl sm:text-2xl font-semibold">{t("success.title")}</h2>
+              </div>
+            </div>
+            <p className="text-sm text-white/90 mt-3">{t("success.body")}</p>
+            {letter && (
+              <a
+                href={`/api/documents/${letter.id}`}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 flex items-center gap-3 rounded-xl bg-white/15 ring-1 ring-white/25 p-3 hover:bg-white/25 transition"
+              >
+                <span className="h-10 w-10 rounded-xl bg-white/20 grid place-items-center text-lg shrink-0">📄</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block font-medium text-sm truncate">{t("success.letterTitle")}</span>
+                  <span className="block text-xs text-white/80 truncate">{letter.filename}</span>
+                </span>
+                <span aria-hidden className="text-lg">↓</span>
+              </a>
+            )}
+            <p className="text-xs text-white/80 mt-3">{t("success.payNote")}</p>
+          </div>
+        </section>
+      )}
+
+      {c.status === "CLOSED" && (
+        <section className="card p-5">
+          <h2 className="font-semibold">{t("review.title")}</h2>
+          <p className="text-sm text-[var(--fg-muted)] mt-0.5 mb-3">{t("review.subtitle")}</p>
+          <ReviewForm
+            caseId={c.id}
+            initialRating={c.review?.rating || 0}
+            initialComment={c.review?.comment || ""}
+            submitted={!!c.review}
+          />
+        </section>
+      )}
 
       {/* Assigned team — who's taking care of this case */}
       {(team.length > 0 || c.manager) && (
@@ -295,7 +351,7 @@ export default async function CaseDetail({ params }) {
           <p className="text-[var(--fg-muted)] text-sm">{t("cases.noDocs")}</p>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
-            {c.documents.map((d) => (
+            {sortedDocs.map((d) => (
               <DocumentTile
                 key={d.id}
                 doc={d}

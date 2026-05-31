@@ -1,4 +1,28 @@
 {
+  "success": {
+    "kicker": "Mission accomplished",
+    "title": "Your case is a success!",
+    "body": "We obtained your tax reduction and the administration's decision is attached below. There is nothing more to do on our side.",
+    "letterTitle": "Tax administration's decision letter",
+    "payNote": "Any remaining balance is settled directly between you and the tax office — it no longer involves us."
+  },
+  "review": {
+    "title": "How was your experience?",
+    "subtitle": "Your feedback helps us improve and helps other owners trust us.",
+    "commentPlaceholder": "Tell us about your experience (optional)…",
+    "submit": "Submit my review",
+    "update": "Update my review",
+    "thanks": "Thanks for your feedback!"
+  },
+  "reviews": {
+    "nav": "Satisfaction",
+    "title": "Client satisfaction",
+    "subtitle": "Ratings and comments left by clients after a successful case.",
+    "average": "Average rating",
+    "count": "review(s)",
+    "distribution": "Distribution",
+    "empty": "No reviews yet."
+  },
   "adminResp": {
     "cardTitle": "Tax-office response",
     "hint": "Upload the administration's decision letter — it is recorded as a milestone and delivered to the client.",

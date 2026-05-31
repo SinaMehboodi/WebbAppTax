@@ -1,4 +1,28 @@
 {
+  "success": {
+    "kicker": "Mission accomplie",
+    "title": "Votre dossier est un succès !",
+    "body": "Nous avons obtenu votre réduction d'impôt et la décision de l'administration est jointe ci-dessous. Il n'y a plus rien à faire de notre côté.",
+    "letterTitle": "Courrier de décision de l'administration",
+    "payNote": "Tout solde éventuel se règle directement entre vous et l'administration fiscale — cela ne nous concerne plus."
+  },
+  "review": {
+    "title": "Comment s'est passée votre expérience ?",
+    "subtitle": "Votre avis nous aide à nous améliorer et rassure les autres propriétaires.",
+    "commentPlaceholder": "Parlez-nous de votre expérience (facultatif)…",
+    "submit": "Envoyer mon avis",
+    "update": "Mettre à jour mon avis",
+    "thanks": "Merci pour votre retour !"
+  },
+  "reviews": {
+    "nav": "Satisfaction",
+    "title": "Satisfaction client",
+    "subtitle": "Notes et commentaires laissés par les clients après un dossier réussi.",
+    "average": "Note moyenne",
+    "count": "avis",
+    "distribution": "Répartition",
+    "empty": "Aucun avis pour l'instant."
+  },
   "adminResp": {
     "cardTitle": "Réponse de l'administration",
     "hint": "Téléversez le courrier de décision de l'administration — il est enregistré comme étape et transmis au client.",
