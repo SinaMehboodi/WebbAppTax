@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 
 export default function ResultForm({ caseId, initial }) {
   const router = useRouter();
+  const t = useT();
   const [summary, setSummary] = useState(initial?.resultSummary || "");
   const [estimatedSavings, setEstimatedSavings] = useState(
     initial?.estimatedSavings ? String(initial.estimatedSavings) : ""
@@ -36,14 +38,14 @@ export default function ResultForm({ caseId, initial }) {
     <form onSubmit={onSubmit} className="space-y-2 text-sm">
       <textarea
         rows={3}
-        placeholder="Summary visible to client"
+        placeholder={t("caseForm.summaryVisible")}
         value={summary}
         onChange={(e) => setSummary(e.target.value)}
         className="w-full p-2.5 rounded-xl"
       />
       <div className="grid grid-cols-3 gap-2">
         <label>
-          Savings (€)
+          {t("caseForm.savings")}
           <input
             type="number"
             step="0.01"
@@ -53,7 +55,7 @@ export default function ResultForm({ caseId, initial }) {
           />
         </label>
         <label>
-          Future yearly impact (€)
+          {t("caseForm.futureYearlyImpact")}
           <input
             type="number"
             step="0.01"
@@ -63,9 +65,9 @@ export default function ResultForm({ caseId, initial }) {
           />
         </label>
         <label>
-          Years covered
+          {t("caseForm.yearsCovered")}
           <input
-            placeholder="2024-2025"
+            placeholder={t("caseForm.yearsPlaceholder")}
             value={yearsCovered}
             onChange={(e) => setYearsCovered(e.target.value)}
             className="w-full mt-1 p-2.5 rounded-xl"
@@ -76,7 +78,7 @@ export default function ResultForm({ caseId, initial }) {
         disabled={loading}
         className="btn-brand rounded-full px-5 py-2.5 font-medium text-sm disabled:opacity-50 disabled:shadow-none"
       >
-        {loading ? "..." : "Record result"}
+        {loading ? "..." : t("caseForm.recordResult")}
       </button>
     </form>
   );

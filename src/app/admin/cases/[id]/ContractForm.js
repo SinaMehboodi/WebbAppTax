@@ -7,9 +7,11 @@
 // The radio choice gates which sub-form is visible so it's unambiguous.
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 
 export default function ContractForm({ caseId, defaults }) {
   const router = useRouter();
+  const t = useT();
   const contractFileRef = useRef(null);
   const mandateFileRef = useRef(null);
 
@@ -38,7 +40,7 @@ export default function ContractForm({ caseId, defaults }) {
     e.preventDefault();
     setError("");
     if (source === "upload" && (!contractFile || !mandateFile)) {
-      setError("Please attach both the contract and mandate PDFs.");
+      setError(t("caseForm.attachBothError"));
       return;
     }
     setLoading(true);
@@ -62,7 +64,7 @@ export default function ContractForm({ caseId, defaults }) {
     const res = await fetch(`/api/cases/${caseId}/contract`, { method: "POST", body: fd });
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error || "error");
+      setError(d.error || t("common.error"));
       setLoading(false);
       return;
     }
@@ -76,46 +78,46 @@ export default function ContractForm({ caseId, defaults }) {
         <SourceCard
           active={source === "template"}
           onClick={() => setSource("template")}
-          title="Generate from template"
-          desc="Fill the property/fee form and we'll build a professional PDF for both contract and mandate."
+          title={t("caseForm.sourceTemplate")}
+          desc={t("caseForm.sourceTemplateDesc")}
           icon="📝"
         />
         <SourceCard
           active={source === "upload"}
           onClick={() => setSource("upload")}
-          title="Upload my own PDFs"
-          desc="Send your pre-filled contract and mandate PDFs as-is. The signature flow still embeds the audit page."
+          title={t("caseForm.sourceUpload")}
+          desc={t("caseForm.sourceUploadDesc")}
           icon="📎"
         />
       </div>
 
       {/* Property name (used in both modes) */}
-      <Field label="Property name (visible to client)">
+      <Field label={t("caseForm.propertyNameVisible")}>
         <input value={form.propertyName} onChange={set("propertyName")} className={input} />
       </Field>
 
       {source === "template" && (
         <div className="space-y-3 card p-4">
           <div className="grid sm:grid-cols-2 gap-3">
-            <Field label="Property address" className="col-span-2">
+            <Field label={t("caseForm.propertyAddress")} className="col-span-2">
               <input value={form.propertyAddress} onChange={set("propertyAddress")} className={input} />
             </Field>
-            <Field label="City">
+            <Field label={t("caseForm.city")}>
               <input value={form.propertyCity} onChange={set("propertyCity")} className={input} />
             </Field>
-            <Field label="ZIP">
+            <Field label={t("caseForm.zip")}>
               <input value={form.propertyZip} onChange={set("propertyZip")} className={input} />
             </Field>
-            <Field label="Cadastral ref">
+            <Field label={t("caseForm.cadastralRef")}>
               <input value={form.cadastralRef} onChange={set("cadastralRef")} className={input} />
             </Field>
-            <Field label="Surface (m²)">
+            <Field label={t("caseForm.surface")}>
               <input type="number" step="0.01" value={form.surface} onChange={set("surface")} className={input} />
             </Field>
-            <Field label="Use type">
-              <input value={form.useType} onChange={set("useType")} placeholder="office, commercial, ..." className={input} />
+            <Field label={t("caseForm.useType")}>
+              <input value={form.useType} onChange={set("useType")} placeholder={t("caseForm.useTypePlaceholder")} className={input} />
             </Field>
-            <Field label="Initial tax amount (€)">
+            <Field label={t("caseForm.initialTaxAmount")}>
               <input type="number" step="0.01" value={form.initialTaxAmount} onChange={set("initialTaxAmount")} className={input} />
             </Field>
           </div>
@@ -125,18 +127,19 @@ export default function ContractForm({ caseId, defaults }) {
       {source === "upload" && (
         <div className="card p-4 space-y-3">
           <p className="text-xs text-[var(--fg-muted)]">
-            Both files are required. They will be sent to the client as-is for
-            signature, and a SamTaxco attestation page is appended after signing.
+            {t("caseForm.uploadBothRequired")}
           </p>
           <div className="grid sm:grid-cols-2 gap-3">
             <FileButton
-              label="Contract PDF *"
+              label={t("caseForm.contractPdf")}
+              placeholder={t("caseForm.clickToAttach")}
               file={contractFile}
               inputRef={contractFileRef}
               onChange={setContractFile}
             />
             <FileButton
-              label="Mandate PDF *"
+              label={t("caseForm.mandatePdf")}
+              placeholder={t("caseForm.clickToAttach")}
               file={mandateFile}
               inputRef={mandateFileRef}
               onChange={setMandateFile}
@@ -147,18 +150,18 @@ export default function ContractForm({ caseId, defaults }) {
 
       {/* Fee model is always relevant for the invoice down the line */}
       <div className="card p-4 space-y-2">
-        <div className="font-medium">Fee model</div>
+        <div className="font-medium">{t("admin.feeModel")}</div>
         <select value={form.feeModel} onChange={set("feeModel")} className={input}>
-          <option value="PERCENT">% of savings</option>
-          <option value="FLAT">Flat fee</option>
-          <option value="AUDIT">Audit flat fee</option>
+          <option value="PERCENT">{t("caseForm.feePercentOption")}</option>
+          <option value="FLAT">{t("caseForm.feeFlatOption")}</option>
+          <option value="AUDIT">{t("caseForm.feeAuditOption")}</option>
         </select>
         {form.feeModel === "PERCENT" ? (
-          <Field label="Percent" className="mt-2">
+          <Field label={t("caseForm.percent")} className="mt-2">
             <input type="number" step="0.01" value={form.feePercent} onChange={set("feePercent")} className={input} />
           </Field>
         ) : (
-          <Field label="Amount HT (€)" className="mt-2">
+          <Field label={t("caseForm.amountHt")} className="mt-2">
             <input type="number" step="0.01" value={form.feeFlatAmount} onChange={set("feeFlatAmount")} className={input} />
           </Field>
         )}
@@ -175,7 +178,7 @@ export default function ContractForm({ caseId, defaults }) {
         disabled={loading}
         className="btn-brand w-full p-3 rounded-xl font-medium disabled:opacity-50 disabled:shadow-none"
       >
-        {loading ? "Sending..." : "Prepare and send for signature →"}
+        {loading ? t("caseForm.sending") : t("caseForm.prepareSend")}
       </button>
     </form>
   );
@@ -224,7 +227,7 @@ function Field({ label, className, children }) {
   );
 }
 
-function FileButton({ label, file, inputRef, onChange }) {
+function FileButton({ label, placeholder, file, inputRef, onChange }) {
   return (
     <div>
       <input
@@ -241,7 +244,7 @@ function FileButton({ label, file, inputRef, onChange }) {
       >
         <div className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{label}</div>
         <div className="text-sm mt-0.5 truncate">
-          {file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : "Click to attach PDF"}
+          {file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : placeholder}
         </div>
       </button>
     </div>

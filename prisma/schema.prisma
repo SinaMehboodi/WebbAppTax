@@ -99,6 +99,9 @@ model User {
   invoicesIssued    Invoice[]            @relation("InvoiceIssuer")
   pushSubscriptions PushSubscription[]
   passkeys          Passkey[]
+  supportThreads    SupportThread[]   @relation("SupportUser")
+  supportAssigned   SupportThread[]   @relation("SupportAgent")
+  supportMessages   SupportMessage[]  @relation("SupportAuthor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -572,4 +575,63 @@ model AnnualReminder {
   createdAt    DateTime @default(now())
 
   @@unique([userId, taxType, year])
+}
+
+// -----------------------------------------------------------------------------
+// Support help desk — the login-page chat widget + back-office inbox.
+// A visitor (often NOT logged in — they can't log in, that's why they're here)
+// opens a thread; staff with support.* permissions answer it. The visitor polls
+// their own thread with an unguessable publicToken stored in localStorage.
+// -----------------------------------------------------------------------------
+enum SupportThreadStatus {
+  OPEN       // new / awaiting first staff response
+  PENDING    // waiting on the visitor
+  RESOLVED   // answered
+  CLOSED     // archived
+}
+
+model SupportThread {
+  id            String              @id @default(cuid())
+  // Visitor identity — may be anonymous.
+  name          String?
+  email         String?
+  subject       String?
+  // Optional link to a known account if they were logged in when writing.
+  userId        String?
+  user          User?               @relation("SupportUser", fields: [userId], references: [id], onDelete: SetNull)
+  // Lets the visitor poll *their* thread without an account.
+  publicToken   String              @unique @default(cuid())
+  status        SupportThreadStatus @default(OPEN)
+  locale        Locale              @default(fr)
+  // Staff member currently handling it.
+  assignedToId  String?
+  assignedTo    User?               @relation("SupportAgent", fields: [assignedToId], references: [id], onDelete: SetNull)
+  lastMessageAt DateTime            @default(now())
+  // Light audit of the opener.
+  ipAddress     String?
+  userAgent     String?
+
+  messages      SupportMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([lastMessageAt])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  threadId  String
+  thread    SupportThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  // null author = the visitor; set = the staff member who replied.
+  authorId  String?
+  author    User?         @relation("SupportAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  fromStaff Boolean       @default(false)
+  body      String
+  // When the opposite side read it (drives unread badges).
+  readAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([threadId])
 }

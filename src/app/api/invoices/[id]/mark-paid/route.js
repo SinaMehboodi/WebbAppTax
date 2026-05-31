@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/session";
 import { setStatus, logActivity } from "@/lib/workflow";
 import { notify } from "@/lib/notifications";
 import { can, PERMS } from "@/lib/permissions";
+import { staffCanAccessCase } from "@/lib/case-access";
 
 export async function POST(_request, { params }) {
   const { id } = await params;
@@ -14,6 +15,9 @@ export async function POST(_request, { params }) {
   }
   const inv = await prisma.invoice.findUnique({ where: { id }, include: { case: true } });
   if (!inv) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (!(await staffCanAccessCase(user, inv.caseId))) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
   await prisma.invoice.update({
     where: { id },
     data: { status: "PAID", paidAt: new Date() },

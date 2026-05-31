@@ -27,13 +27,27 @@ export default async function AllCases({ searchParams }) {
   const statusFilter = typeof sp.status === "string"
     ? sp.status.split(",").filter((s) => ALL_STATUSES.includes(s))
     : null;
+  const search = typeof sp.q === "string" ? sp.q.trim() : "";
+  const sort = typeof sp.sort === "string" ? sp.sort : "updated_desc";
 
   const viewAll = can(me, PERMS.CASE_VIEW_ALL);
 
-  // Where clause: status filter + (if not viewAll) restrict to cases the
-  // viewer is the primary manager OR an assignee of.
+  // Where clause: status filter + search + (if not viewAll) restrict to
+  // cases the viewer is the primary manager OR an assignee of.
   const where = {};
   if (statusFilter) where.status = { in: statusFilter };
+  if (search) {
+    where.AND = [
+      {
+        OR: [
+          { reference: { contains: search, mode: "insensitive" } },
+          { propertyName: { contains: search, mode: "insensitive" } },
+          { owner: { firstName: { contains: search, mode: "insensitive" } } },
+          { owner: { lastName: { contains: search, mode: "insensitive" } } },
+        ],
+      },
+    ];
+  }
   if (!viewAll) {
     where.OR = [
       { managerId: me.id },
@@ -41,9 +55,17 @@ export default async function AllCases({ searchParams }) {
     ];
   }
 
+  const orderBy = {
+    updated_desc: [{ updatedAt: "desc" }],
+    updated_asc:  [{ updatedAt: "asc"  }],
+    created_desc: [{ createdAt: "desc" }],
+    created_asc:  [{ createdAt: "asc"  }],
+    reference_asc:[{ reference: "asc"  }],
+  }[sort] || [{ updatedAt: "desc" }];
+
   const cases = await prisma.taxCase.findMany({
     where,
-    orderBy: [{ updatedAt: "desc" }],
+    orderBy,
     take: 200,
     include: {
       owner:   { select: { firstName: true, lastName: true, email: true } },
@@ -71,35 +93,56 @@ export default async function AllCases({ searchParams }) {
         </p>
       </header>
 
-      {/* Status chips */}
-      <div className="flex flex-wrap gap-1.5">
-        <Link
-          href="/admin/cases"
-          className={`text-xs px-2.5 py-1 rounded-full border ${
-            !statusFilter
-              ? "btn-brand border-transparent"
-              : "border-[var(--border)] bg-[var(--surface-1)] hover:border-[var(--brand-500)]"
-          }`}
-        >
-          {t("common.all")}
-        </Link>
-        {ALL_STATUSES.map((s) => {
-          const on = statusFilter && statusFilter.includes(s);
-          return (
-            <Link
-              key={s}
-              href={`/admin/cases?status=${s}`}
-              className={`text-xs px-2.5 py-1 rounded-full border ${
-                on
-                  ? "btn-brand border-transparent"
-                  : "border-[var(--border)] bg-[var(--surface-1)] hover:border-[var(--brand-500)]"
-              }`}
-            >
-              {t(`status.${s}`)}
-            </Link>
-          );
-        })}
-      </div>
+      {/* Filter bar — compact, professional. A native form submits via GET
+          which keeps everything server-rendered (no extra JS). */}
+      <form method="GET" className="card p-3 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+        <div className="sm:col-span-5 relative">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-muted)]">
+            <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            name="q"
+            defaultValue={search}
+            placeholder={fr ? "Rechercher (référence, bien, client…)" : "Search (reference, property, client…)"}
+            className="w-full pl-9 pr-3 py-2 rounded-xl text-sm"
+          />
+        </div>
+        <label className="sm:col-span-4 text-sm">
+          <select
+            name="status"
+            defaultValue={statusFilter ? statusFilter.join(",") : ""}
+            className="w-full p-2 rounded-xl text-sm"
+          >
+            <option value="">{fr ? "Tous les statuts" : "All statuses"}</option>
+            {ALL_STATUSES.map((s) => (
+              <option key={s} value={s}>{t(`status.${s}`)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="sm:col-span-2 text-sm">
+          <select name="sort" defaultValue={sort} className="w-full p-2 rounded-xl text-sm">
+            <option value="updated_desc">{fr ? "Récent" : "Recent"}</option>
+            <option value="updated_asc">{fr ? "Ancien" : "Oldest"}</option>
+            <option value="created_desc">{fr ? "Date création ↓" : "Created ↓"}</option>
+            <option value="created_asc">{fr ? "Date création ↑" : "Created ↑"}</option>
+            <option value="reference_asc">{fr ? "Référence" : "Reference"}</option>
+          </select>
+        </label>
+        <div className="sm:col-span-1 flex gap-2">
+          <button type="submit" className="btn-brand rounded-xl px-3 py-2 text-sm font-medium w-full sm:w-auto" title={fr ? "Filtrer" : "Filter"}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-4 w-4 mx-auto"><path d="M4 4h16M7 12h10M10 20h4" /></svg>
+          </button>
+        </div>
+        {(statusFilter || search || sort !== "updated_desc") && (
+          <Link
+            href="/admin/cases"
+            className="sm:col-span-12 text-xs text-[var(--fg-muted)] hover:text-[var(--fg)] underline w-fit"
+          >
+            {fr ? "Réinitialiser les filtres" : "Reset filters"}
+          </Link>
+        )}
+      </form>
 
       {cases.length === 0 ? (
         <div className="card p-8 text-center">
@@ -192,14 +235,14 @@ function CaseCard({ c, fr, t }) {
           {c.assignments.slice(0, 4).map((a) => (
             <span
               key={a.id}
-              className="text-[10px] inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--surface-2)] border border-[var(--border)] text-[var(--fg-muted)]"
+              className="text-[11px] font-semibold inline-flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-sky-800 border border-sky-200 dark:bg-sky-900/40 dark:text-sky-200 dark:border-sky-800/60 tracking-tight"
               title={`${a.user.firstName} ${a.user.lastName}`}
             >
               {(a.user.firstName?.[0] || "?") + (a.user.lastName?.[0] || "")}
             </span>
           ))}
           {c.assignments.length > 4 && (
-            <span className="text-[10px] text-[var(--fg-muted)]">+{c.assignments.length - 4}</span>
+            <span className="text-[11px] text-[var(--fg-muted)] font-medium">+{c.assignments.length - 4}</span>
           )}
         </div>
       )}

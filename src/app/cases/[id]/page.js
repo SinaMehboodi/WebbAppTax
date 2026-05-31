@@ -16,6 +16,7 @@ import StatusBadge from "@/components/StatusBadge";
 import CommentStream from "@/components/CommentStream";
 import AdditionalUpload from "@/components/AdditionalUpload";
 import DocumentTile from "@/components/DocumentTile";
+import { buildDocLabels } from "@/lib/docLabels";
 
 // A client can delete documents they uploaded as long as the case isn't
 // past Phase 4. Server enforces the same rule on DELETE.
@@ -250,7 +251,7 @@ export default async function CaseDetail({ params }) {
         <section>
           <h2 className="font-semibold mb-3 flex items-center gap-2">
             <span className="h-7 w-7 rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 inline-flex items-center justify-center text-xs">✓</span>
-            Trace de signature
+            {t("sign.auditTitle")}
           </h2>
           <div className="card p-4 space-y-3">
             {signatureAudits.map((a) => {
@@ -259,7 +260,7 @@ export default async function CaseDetail({ params }) {
               const shortUA = ua.length > 80 ? ua.slice(0, 80) + "…" : ua;
               return (
                 <div key={a.id} className="border-l-2 border-emerald-500 pl-3 text-xs space-y-0.5">
-                  <div className="font-semibold text-sm capitalize">{d.kind} signé</div>
+                  <div className="font-semibold text-sm capitalize">{t("sign.signedKind", { kind: d.kind })}</div>
                   <div className="text-[var(--fg-muted)]">
                     {d.signerName} · {d.signerEmail}
                   </div>
@@ -268,7 +269,7 @@ export default async function CaseDetail({ params }) {
                   </div>
                   <div className="text-[var(--fg-muted)] truncate" title={ua}>{shortUA}</div>
                   <div className="text-[var(--fg-muted)] font-mono text-[10px]">
-                    SHA-256 signé : {String(d.signedSha256 || "").slice(0, 24)}…
+                    {t("sign.signedHash")} {String(d.signedSha256 || "").slice(0, 24)}…
                   </div>
                   {d.signedDocumentId && (
                     <a
@@ -277,7 +278,7 @@ export default async function CaseDetail({ params }) {
                       rel="noreferrer"
                       className="inline-block mt-1 text-emerald-700 dark:text-emerald-400 hover:underline"
                     >
-                      Voir l&apos;attestation PDF →
+                      {t("sign.viewAttestation")}
                     </a>
                   )}
                 </div>
@@ -299,6 +300,7 @@ export default async function CaseDetail({ params }) {
                 key={d.id}
                 doc={d}
                 canDelete={canClientDelete(d, c)}
+                labels={buildDocLabels(t)}
               />
             ))}
           </div>

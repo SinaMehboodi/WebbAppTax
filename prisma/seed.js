@@ -71,11 +71,15 @@ const SAMUEL_PERMS = [
   "case.assign_self",
   "case.assign_others",
   "case.view_all",
+  "case.comment",
   "presentation.edit",
   "presentation.delete",
   "reports.view",
   "reports.export",
   "users.grant_perms",
+  "support.view",
+  "support.reply",
+  "support.manage",
 ];
 
 // Default for a new employee — case handling, but no closing, invoicing or
@@ -85,6 +89,7 @@ const EMPLOYEE_DEFAULT_PERMS = [
   "case.request_docs",
   "case.analyze",
   "case.assign_self",
+  "case.comment",
   "reports.view",
 ];
 

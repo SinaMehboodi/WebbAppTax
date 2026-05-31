@@ -15,11 +15,15 @@ import { notify } from "@/lib/notifications";
 import { buildFilename } from "@/lib/filename";
 import { generateContractPdf, generateMandatePdf } from "@/lib/pdf";
 import { can, PERMS } from "@/lib/permissions";
+import { staffCanAccessCase } from "@/lib/case-access";
 
 export async function POST(request, { params }) {
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user || !can(user, PERMS.CASE_PREPARE_CONTRACT)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

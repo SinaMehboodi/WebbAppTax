@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 
 export default function DocRequestForm({ caseId }) {
   const router = useRouter();
+  const t = useT();
   const [label, setLabel] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,13 +29,13 @@ export default function DocRequestForm({ caseId }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 text-sm">
       <input
-        placeholder="Label (e.g. Property plan)"
+        placeholder={t("caseForm.labelPlaceholder")}
         value={label}
         onChange={(e) => setLabel(e.target.value)}
         className="flex-1 p-2.5 rounded-xl"
       />
       <input
-        placeholder="Description (optional)"
+        placeholder={t("caseForm.descriptionPlaceholder")}
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         className="flex-1 p-2.5 rounded-xl"
@@ -42,7 +44,7 @@ export default function DocRequestForm({ caseId }) {
         disabled={loading || !label.trim()}
         className="btn-brand rounded-full px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:shadow-none"
       >
-        + Request
+        + {t("caseForm.requestBtn")}
       </button>
     </form>
   );

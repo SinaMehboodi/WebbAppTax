@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { staffCanAccessCase } from "@/lib/case-access";
 import { activeProvider, makeKey, putFile } from "@/lib/storage";
 import { logActivity, setStatus } from "@/lib/workflow";
 import { notifyStaff } from "@/lib/notifications";
@@ -27,7 +28,11 @@ export async function POST(request, { params }) {
     },
   });
   if (!c) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (user.role === "USER" && c.ownerId !== user.id) {
+  if (user.role === "USER") {
+    if (c.ownerId !== user.id) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  } else if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

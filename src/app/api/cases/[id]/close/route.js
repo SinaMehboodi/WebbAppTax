@@ -9,6 +9,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { can, PERMS } from "@/lib/permissions";
+import { staffCanAccessCase } from "@/lib/case-access";
 import { setStatus, logActivity } from "@/lib/workflow";
 import { notify } from "@/lib/notifications";
 
@@ -28,6 +29,9 @@ export async function POST(request, { params }) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   if (!can(user, PERMS.CASE_CLOSE)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

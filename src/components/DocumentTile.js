@@ -17,8 +17,21 @@ const KIND_COLOR = {
   CADASTRAL:      "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
 };
 
-export default function DocumentTile({ doc, canDelete }) {
+// Default English labels are used if `labels` prop is missing. Parent pages
+// should pass localized labels via `getDictionary().t("doc.*")`.
+const DEFAULT_LABELS = {
+  view: "View",
+  download: "Download",
+  delete: "Delete",
+  confirm: "Confirm",
+  cancel: "Cancel",
+  deleteError: "Could not delete this document.",
+};
+
+export default function DocumentTile({ doc, canDelete, labels }) {
   const router = useRouter();
+  const L = { ...DEFAULT_LABELS, ...(labels || {}) };
+
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
@@ -38,7 +51,7 @@ export default function DocumentTile({ doc, canDelete }) {
     setBusy(false);
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      setError(d.error || "Could not delete this document.");
+      setError(d.error || L.deleteError);
       setConfirming(false);
       return;
     }
@@ -63,10 +76,21 @@ export default function DocumentTile({ doc, canDelete }) {
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5 shrink-0 justify-end">
-          <a href={url} target="_blank" rel="noreferrer" className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs hover:bg-[var(--surface-2)]">
-            Voir
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs hover:bg-[var(--surface-2)]"
+          >
+            {L.view}
           </a>
-          <a href={url} download={doc.filename} className="rounded-full btn-brand px-3 py-1.5 text-xs">
+          <a
+            href={url}
+            download={doc.filename}
+            className="rounded-full btn-brand px-3 py-1.5 text-xs"
+            title={L.download}
+            aria-label={L.download}
+          >
             ↓
           </a>
           {allowDelete && (
@@ -78,13 +102,15 @@ export default function DocumentTile({ doc, canDelete }) {
                   disabled={busy}
                   className="rounded-full bg-rose-600 text-white px-3 py-1.5 text-xs disabled:opacity-50"
                 >
-                  {busy ? "…" : "Confirmer"}
+                  {busy ? "…" : L.confirm}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirming(false)}
                   disabled={busy}
                   className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs"
+                  title={L.cancel}
+                  aria-label={L.cancel}
                 >
                   ✕
                 </button>
@@ -95,7 +121,7 @@ export default function DocumentTile({ doc, canDelete }) {
                 onClick={() => setConfirming(true)}
                 className="rounded-full border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 px-3 py-1.5 text-xs hover:bg-rose-50 dark:hover:bg-rose-950/30"
               >
-                Suppr.
+                {L.delete}
               </button>
             )
           )}

@@ -2,14 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getDictionary } from "@/lib/dictionary";
-
-const PALETTES = [
-  { tone: "emerald", grad: "from-emerald-500 to-teal-600", glow: "rgba(16,185,129,.16)" },
-  { tone: "sky", grad: "from-sky-500 to-indigo-600", glow: "rgba(56,189,248,.16)" },
-  { tone: "amber", grad: "from-amber-500 to-orange-600", glow: "rgba(245,158,11,.18)" },
-  { tone: "violet", grad: "from-violet-500 to-fuchsia-600", glow: "rgba(168,85,247,.18)" },
-  { tone: "rose", grad: "from-rose-500 to-pink-600", glow: "rgba(244,63,94,.18)" },
-];
+import { paletteFor } from "@/lib/slideColors";
 
 export default async function PresentSectionPage({ params, searchParams }) {
   const { slug } = await params;
@@ -31,7 +24,7 @@ export default async function PresentSectionPage({ params, searchParams }) {
   const { t, locale } = await getDictionary();
   const title = locale === "en" ? section.titleEn : section.titleFr;
   const content = locale === "en" ? section.contentEn : section.contentFr;
-  const palette = PALETTES[(section.order - 1 + PALETTES.length) % PALETTES.length];
+  const palette = paletteFor(section.order);
 
   // Split into intro line + bullet-like lines (lines starting with "•" or "-")
   const lines = (content || "").split("\n");
@@ -45,7 +38,7 @@ export default async function PresentSectionPage({ params, searchParams }) {
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-zinc-50 to-white dark:from-zinc-950 dark:to-zinc-900" />
         <div
           className="absolute inset-0 -z-10 opacity-70"
-          style={{ background: `radial-gradient(60% 50% at 25% 20%, ${palette.glow}, transparent 60%)` }}
+          style={{ background: `radial-gradient(60% 50% at 25% 20%, ${palette.hex}33, transparent 60%)` }}
         />
         <div className="max-w-3xl mx-auto px-6 pt-12 pb-8">
           <Link
@@ -56,7 +49,8 @@ export default async function PresentSectionPage({ params, searchParams }) {
           </Link>
           <div className="mt-6 flex items-center gap-4">
             <div
-              className={`shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br ${palette.grad} text-white flex items-center justify-center font-semibold text-lg shadow-lg`}
+              className="shrink-0 h-14 w-14 rounded-2xl text-white flex items-center justify-center font-semibold text-lg shadow-lg"
+              style={{ background: palette.hex }}
             >
               {String(section.order).padStart(2, "0")}
             </div>
@@ -87,7 +81,8 @@ export default async function PresentSectionPage({ params, searchParams }) {
                 className="flex items-start gap-3 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4"
               >
                 <span
-                  className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-gradient-to-br ${palette.grad}`}
+                  className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ background: palette.hex }}
                 />
                 <span className="text-zinc-800 dark:text-zinc-200">{b}</span>
               </li>
@@ -124,7 +119,8 @@ export default async function PresentSectionPage({ params, searchParams }) {
           ) : (
             <Link
               href={`/signup${repId ? `?rep=${repId}` : ""}`}
-              className={`rounded-full px-5 py-2.5 text-white bg-gradient-to-br ${palette.grad} shadow-lg`}
+              className="rounded-full px-5 py-2.5 text-white shadow-lg"
+              style={{ background: palette.hex }}
             >
               {t("present.finish")} →
             </Link>

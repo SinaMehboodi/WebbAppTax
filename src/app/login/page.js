@@ -2,6 +2,7 @@ import { getDictionary } from "@/lib/dictionary";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import LoginForm from "./LoginForm";
+import SupportWidget from "@/components/SupportWidget";
 import Link from "next/link";
 
 export default async function LoginPage() {
@@ -41,13 +42,19 @@ export default async function LoginPage() {
             emailNeededForBiometric: t("login.emailNeededForBiometric"),
           }}
         />
-        <div className="text-sm text-[var(--fg-muted)] text-center">
-          {t("login.noAccount")}{" "}
-          <Link href="/signup" className="text-[var(--brand-600)] font-medium hover:underline">
-            {t("login.signupLink")}
-          </Link>
+        <div className="relative flex items-center text-xs text-[var(--fg-muted)]">
+          <div className="flex-1 border-t border-[var(--border)]" />
+          <span className="px-2">{t("login.noAccount")}</span>
+          <div className="flex-1 border-t border-[var(--border)]" />
         </div>
+        <Link
+          href="/signup"
+          className="block w-full text-center p-3.5 rounded-xl font-medium text-base border-2 border-[var(--brand-500)] text-[var(--brand-600)] dark:text-[var(--brand-400)] hover:bg-[var(--brand-50)] dark:hover:bg-[var(--brand-900)]/30 transition"
+        >
+          {t("login.createAccount")}
+        </Link>
       </div>
+      <SupportWidget />
     </div>
   );
 }

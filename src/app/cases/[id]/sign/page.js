@@ -76,6 +76,8 @@ export default async function SignPage({ params }) {
           signed: t("sign.signed"),
           afterTitle: t("sign.afterTitle"),
           afterBody: t("sign.afterBody"),
+          viewPdf: t("sign.viewPdf"),
+          readyToSign: t("sign.readyToSign"),
         }}
       />
     </div>

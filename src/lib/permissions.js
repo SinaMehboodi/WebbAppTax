@@ -29,6 +29,9 @@ export const PERMS = Object.freeze({
   CASE_DELETE:          "case.delete",
   CASE_DELETE_FILES:    "case.delete_files",     // delete protected docs (signed/contract/invoice)
 
+  // Communication — client ↔ staff messaging on a case
+  CASE_COMMENT:         "case.comment",          // post replies/comments on cases (staff side)
+
   // Presentation
   PRESENTATION_EDIT:    "presentation.edit",
   PRESENTATION_DELETE:  "presentation.delete",
@@ -36,6 +39,11 @@ export const PERMS = Object.freeze({
   // Reports
   REPORTS_VIEW:         "reports.view",
   REPORTS_EXPORT:       "reports.export",
+
+  // Support — visitor help desk (login-page chat + back-office inbox)
+  SUPPORT_VIEW:         "support.view",          // open the support inbox & read threads
+  SUPPORT_REPLY:        "support.reply",         // answer a visitor
+  SUPPORT_MANAGE:       "support.manage",        // assign, change status, close threads
 
   // Users — non-destructive, ADMIN can grant to senior employees
   USERS_GRANT_PERMS:    "users.grant_perms",
@@ -88,6 +96,15 @@ export const PERM_GROUPS = [
     ],
   },
   {
+    key: "communication",
+    labelFr: "Communication",
+    labelEn: "Communication",
+    icon: "💬",
+    perms: [
+      { key: PERMS.CASE_COMMENT, labelFr: "Répondre et commenter les dossiers", labelEn: "Reply & comment on cases" },
+    ],
+  },
+  {
     key: "presentation",
     labelFr: "Présentation",
     labelEn: "Presentation",
@@ -115,6 +132,17 @@ export const PERM_GROUPS = [
     perms: [
       { key: PERMS.USERS_CREATE_CLIENT, labelFr: "Inscrire un nouveau client", labelEn: "Register a new client" },
       { key: PERMS.USERS_GRANT_PERMS,   labelFr: "Modifier les permissions d'autres employés", labelEn: "Edit other employees' permissions" },
+    ],
+  },
+  {
+    key: "support",
+    labelFr: "Support / Aide",
+    labelEn: "Support / Help desk",
+    icon: "🛟",
+    perms: [
+      { key: PERMS.SUPPORT_VIEW,   labelFr: "Voir la messagerie de support",            labelEn: "View the support inbox" },
+      { key: PERMS.SUPPORT_REPLY,  labelFr: "Répondre aux demandes de support",          labelEn: "Reply to support requests" },
+      { key: PERMS.SUPPORT_MANAGE, labelFr: "Gérer les conversations (statut, clôture)", labelEn: "Manage conversations (status, close)" },
     ],
   },
 ];

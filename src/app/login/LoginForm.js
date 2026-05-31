@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { startAuthentication } from "@simplewebauthn/browser";
@@ -99,9 +99,16 @@ export default function LoginForm({ labels }) {
     }
   }
 
-  const biometricSupported =
-    typeof window !== "undefined" &&
-    typeof window.PublicKeyCredential !== "undefined";
+  // Whether the browser supports WebAuthn/passkeys. This MUST start as `false`
+  // on both the server and the client's first render: reading `window` during
+  // render makes the server (no `window`) and client disagree, which triggers a
+  // hydration mismatch that regenerates the whole form — breaking the password
+  // eye toggle and the submit button until React finishes re-rendering. We flip
+  // it on after mount, where `window` is always available.
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  useEffect(() => {
+    setBiometricSupported(typeof window.PublicKeyCredential !== "undefined");
+  }, []);
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">

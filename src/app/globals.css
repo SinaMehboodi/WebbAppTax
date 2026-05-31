@@ -55,6 +55,23 @@
   --radius-md: 0.875rem;
   --radius-lg: 1.25rem;
   --radius-xl: 1.75rem;
+
+  /* ---------------------------------------------------------------------------
+     Categorical accent palette — ColorBrewer "8-class Set3".
+     These pastels are used ONLY for *qualitative identity* (roles, people
+     avatars, presentation sections, support categories) — never for status,
+     which keeps its semantic emerald/amber/sky/rose meaning. Each colour ships
+     as an `rgb` triplet (so we can do `rgb(var(--c-set3-N) / .25)`) plus a
+     hand-picked dark "ink" tone for accessible text on the pastel.
+     --------------------------------------------------------------------------- */
+  --c-set3-1: 141 211 199;  --c-set3-1-ink: #0f5e54;  /* teal   */
+  --c-set3-2: 255 255 179;  --c-set3-2-ink: #6b6411;  /* yellow (border-separated from white surfaces) */
+  --c-set3-3: 190 186 218;  --c-set3-3-ink: #43406b;  /* lavender */
+  --c-set3-4: 251 128 114;  --c-set3-4-ink: #7c2d28;  /* coral  */
+  --c-set3-5: 128 177 211;  --c-set3-5-ink: #1e466b;  /* blue   */
+  --c-set3-6: 253 180  98;  --c-set3-6-ink: #7a4a12;  /* orange */
+  --c-set3-7: 179 222 105;  --c-set3-7-ink: #4f6b16;  /* green  */
+  --c-set3-8: 252 205 229;  --c-set3-8-ink: #7a3257;  /* pink   */
 }
 
 /* Dark tokens — applied only when <html data-theme="dark">. An inline script
@@ -157,6 +174,43 @@ button, a {
   background: color-mix(in srgb, var(--brand-50) 50%, var(--surface-2));
   border-color: color-mix(in srgb, var(--brand-500) 35%, var(--border));
 }
+
+/* =============================================================================
+   Set3 categorical chips/avatars. `.set3-solid-N` = filled pastel + dark ink
+   (roles, avatars, slide numbers). `.set3-soft-N` = translucent tint + ink
+   (banners, larger panels). Driven by src/lib/uiColors.js helpers.
+   ============================================================================= */
+.set3-solid-1,.set3-solid-2,.set3-solid-3,.set3-solid-4,
+.set3-solid-5,.set3-solid-6,.set3-solid-7,.set3-solid-8 {
+  border: 1px solid transparent;
+}
+.set3-solid-1 { background: rgb(var(--c-set3-1)); color: var(--c-set3-1-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-1)) 65%, #0000); }
+.set3-solid-2 { background: rgb(var(--c-set3-2)); color: var(--c-set3-2-ink); border-color: color-mix(in srgb, var(--c-set3-2-ink) 22%, #0000); }
+.set3-solid-3 { background: rgb(var(--c-set3-3)); color: var(--c-set3-3-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-3)) 65%, #0000); }
+.set3-solid-4 { background: rgb(var(--c-set3-4)); color: var(--c-set3-4-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-4)) 65%, #0000); }
+.set3-solid-5 { background: rgb(var(--c-set3-5)); color: var(--c-set3-5-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-5)) 65%, #0000); }
+.set3-solid-6 { background: rgb(var(--c-set3-6)); color: var(--c-set3-6-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-6)) 65%, #0000); }
+.set3-solid-7 { background: rgb(var(--c-set3-7)); color: var(--c-set3-7-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-7)) 65%, #0000); }
+.set3-solid-8 { background: rgb(var(--c-set3-8)); color: var(--c-set3-8-ink); border-color: color-mix(in srgb, rgb(var(--c-set3-8)) 65%, #0000); }
+
+.set3-soft-1 { background: rgb(var(--c-set3-1) / .22); color: var(--c-set3-1-ink); border: 1px solid rgb(var(--c-set3-1) / .45); }
+.set3-soft-2 { background: rgb(var(--c-set3-2) / .35); color: var(--c-set3-2-ink); border: 1px solid rgb(var(--c-set3-2) / .65); }
+.set3-soft-3 { background: rgb(var(--c-set3-3) / .25); color: var(--c-set3-3-ink); border: 1px solid rgb(var(--c-set3-3) / .50); }
+.set3-soft-4 { background: rgb(var(--c-set3-4) / .20); color: var(--c-set3-4-ink); border: 1px solid rgb(var(--c-set3-4) / .45); }
+.set3-soft-5 { background: rgb(var(--c-set3-5) / .22); color: var(--c-set3-5-ink); border: 1px solid rgb(var(--c-set3-5) / .45); }
+.set3-soft-6 { background: rgb(var(--c-set3-6) / .22); color: var(--c-set3-6-ink); border: 1px solid rgb(var(--c-set3-6) / .45); }
+.set3-soft-7 { background: rgb(var(--c-set3-7) / .25); color: var(--c-set3-7-ink); border: 1px solid rgb(var(--c-set3-7) / .50); }
+.set3-soft-8 { background: rgb(var(--c-set3-8) / .30); color: var(--c-set3-8-ink); border: 1px solid rgb(var(--c-set3-8) / .55); }
+
+/* On dark surfaces, lift the ink to near-white so soft tints stay legible. */
+:root[data-theme="dark"] .set3-soft-1,
+:root[data-theme="dark"] .set3-soft-2,
+:root[data-theme="dark"] .set3-soft-3,
+:root[data-theme="dark"] .set3-soft-4,
+:root[data-theme="dark"] .set3-soft-5,
+:root[data-theme="dark"] .set3-soft-6,
+:root[data-theme="dark"] .set3-soft-7,
+:root[data-theme="dark"] .set3-soft-8 { color: var(--fg); }
 
 /* Subtle reveal on scroll/page-in */
 @keyframes mindset-rise {

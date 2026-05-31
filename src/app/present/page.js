@@ -5,17 +5,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDictionary } from "@/lib/dictionary";
+import { paletteFor } from "@/lib/slideColors";
 import RepQrPanel from "./RepQrPanel";
 
 export const dynamic = "force-dynamic";
-
-const PALETTES = [
-  { card: "from-emerald-500 to-teal-600", glow: "rgba(16,185,129,.18)" },
-  { card: "from-sky-500 to-indigo-600", glow: "rgba(56,189,248,.18)" },
-  { card: "from-amber-500 to-orange-600", glow: "rgba(245,158,11,.18)" },
-  { card: "from-violet-500 to-fuchsia-600", glow: "rgba(168,85,247,.18)" },
-  { card: "from-rose-500 to-pink-600", glow: "rgba(244,63,94,.18)" },
-];
 
 export default async function PresentPage({ searchParams }) {
   const sp = (await searchParams) || {};
@@ -79,8 +72,8 @@ export default async function PresentPage({ searchParams }) {
       {/* Section cards */}
       <section className="max-w-5xl mx-auto px-6 py-12 w-full">
         <div className="grid gap-4">
-          {sections.map((s, idx) => {
-            const palette = PALETTES[idx % PALETTES.length];
+          {sections.map((s) => {
+            const palette = paletteFor(s.order);
             const preview = (content(s) || "").split("\n").find((l) => l.trim()) || "";
             return (
               <Link
@@ -89,12 +82,13 @@ export default async function PresentPage({ searchParams }) {
                 className="group relative overflow-hidden rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 sm:p-8 hover:border-zinc-400 dark:hover:border-zinc-600 transition shadow-sm hover:shadow-md"
               >
                 <div
-                  className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-30 blur-3xl"
-                  style={{ background: palette.glow }}
+                  className="absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-40 blur-3xl"
+                  style={{ background: palette.hex }}
                 />
                 <div className="relative flex items-start gap-5">
                   <div
-                    className={`shrink-0 h-14 w-14 rounded-2xl bg-gradient-to-br ${palette.card} text-white flex items-center justify-center font-semibold text-lg shadow-lg`}
+                    className="shrink-0 h-14 w-14 rounded-2xl flex items-center justify-center font-semibold text-lg shadow-lg"
+                    style={{ background: palette.hex, color: "#fff" }}
                   >
                     {String(s.order).padStart(2, "0")}
                   </div>

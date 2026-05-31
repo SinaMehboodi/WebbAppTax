@@ -139,7 +139,7 @@ function DocTile({
           <div className="min-w-0 flex-1">
             <div className="font-semibold">{title}</div>
             <div className="text-xs text-[var(--fg-muted)] mt-0.5">
-              {signed ? signedLabel : "PDF · prêt à signer"}
+              {signed ? signedLabel : (labels.readyToSign || "PDF · ready to sign")}
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@ function DocTile({
               rel="noreferrer"
               className="btn-soft rounded-full px-3 sm:px-4 py-2 text-xs sm:text-sm flex-1 sm:flex-none text-center"
             >
-              Voir PDF
+              {labels.viewPdf || "View PDF"}
             </a>
           )}
           {!signed && !active && (

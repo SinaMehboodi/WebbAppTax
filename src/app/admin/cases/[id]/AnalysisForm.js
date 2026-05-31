@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 
 export default function AnalysisForm({ caseId }) {
   const router = useRouter();
+  const t = useT();
   const [form, setForm] = useState({
     rentalValueReview: "",
     surfaceCheck: "",
@@ -35,13 +37,13 @@ export default function AnalysisForm({ caseId }) {
   }
 
   const fields = [
-    ["rentalValueReview", "Rental value review"],
-    ["surfaceCheck", "Surface check"],
-    ["useClassification", "Use classification"],
-    ["annexesNotes", "Annexes / dependencies"],
-    ["cadastralComparison", "Cadastral comparison"],
-    ["legalChanges", "Legal changes"],
-    ["simulationNotes", "Simulation notes"],
+    ["rentalValueReview", t("caseForm.rentalValueReview")],
+    ["surfaceCheck", t("caseForm.surfaceCheck")],
+    ["useClassification", t("caseForm.useClassification")],
+    ["annexesNotes", t("caseForm.annexesNotes")],
+    ["cadastralComparison", t("caseForm.cadastralComparison")],
+    ["legalChanges", t("caseForm.legalChanges")],
+    ["simulationNotes", t("caseForm.simulationNotes")],
   ];
 
   return (
@@ -59,7 +61,7 @@ export default function AnalysisForm({ caseId }) {
       ))}
       <div className="grid grid-cols-2 gap-2">
         <label>
-          Estimated savings (€)
+          {t("caseForm.estimatedSavings")}
           <input
             type="number"
             step="0.01"
@@ -69,9 +71,9 @@ export default function AnalysisForm({ caseId }) {
           />
         </label>
         <label>
-          Years covered
+          {t("caseForm.yearsCovered")}
           <input
-            placeholder="2024-2025"
+            placeholder={t("caseForm.yearsPlaceholder")}
             value={form.yearsCovered}
             onChange={set("yearsCovered")}
             className="w-full mt-1 p-2.5 rounded-xl"
@@ -82,7 +84,7 @@ export default function AnalysisForm({ caseId }) {
         disabled={loading}
         className="btn-brand rounded-full px-5 py-2.5 font-medium text-sm disabled:opacity-50 disabled:shadow-none"
       >
-        {loading ? "..." : "Save analysis → decision pending"}
+        {loading ? "..." : t("caseForm.saveAnalysis")}
       </button>
     </form>
   );

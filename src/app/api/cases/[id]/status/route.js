@@ -3,12 +3,16 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { staffCanAccessCase } from "@/lib/case-access";
 import { setStatus, STATUS } from "@/lib/workflow";
 
 export async function POST(request, { params }) {
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user || !["ADMIN", "EMPLOYEE", "SUPER_ADMIN"].includes(user.role)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const { status, note } = await request.json().catch(() => ({}));

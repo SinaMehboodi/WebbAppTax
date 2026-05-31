@@ -81,7 +81,7 @@ export default async function InvoiceDetail({ params }) {
         <TutorialBlock
           n={3}
           title={t("invoices.explainLegal")}
-          body="Paiement à 30 jours conformément au contrat signé et à la réglementation française."
+          body={t("invoices.explainLegalBody")}
         />
       </section>
     </div>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function NewSlideButton() {
+export default function NewSlideButton({ labels }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -19,7 +19,6 @@ export default function NewSlideButton() {
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   function autoSlug(value) {
-    // Strip accents + lowercase + replace non a-z0-9 with dashes
     return value
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "")
@@ -42,8 +41,8 @@ export default function NewSlideButton() {
     setBusy(false);
     if (!res.ok) {
       const d = await res.json().catch(() => ({}));
-      if (d.error === "slug.taken") setError("Ce slug existe déjà / Slug already exists.");
-      else setError(d.details?.[0] || "Erreur — vérifiez tous les champs.");
+      if (d.error === "slug.taken") setError(labels.slugTaken);
+      else setError(d.details?.[0] || labels.genericError);
       return;
     }
     setOpen(false);
@@ -59,7 +58,7 @@ export default function NewSlideButton() {
         className="btn-brand rounded-full px-4 py-2 text-sm font-medium inline-flex items-center gap-2"
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-4 w-4"><path d="M12 5v14" /><path d="M5 12h14" /></svg>
-        Nouvelle slide
+        {labels.newSlide}
       </button>
     );
   }
@@ -71,37 +70,37 @@ export default function NewSlideButton() {
         className="card p-5 w-full max-w-lg space-y-3 animate-rise"
       >
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Nouvelle slide</h2>
+          <h2 className="text-lg font-semibold">{labels.newSlide}</h2>
           <button type="button" onClick={() => setOpen(false)} className="text-[var(--fg-muted)] text-xl leading-none">×</button>
         </div>
 
         <label className="block text-sm">
-          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Slug (auto si vide)</span>
+          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{labels.slug}</span>
           <input
             value={form.slug}
             onChange={set("slug")}
-            placeholder={form.titleEn ? autoSlug(form.titleEn) : "ma-slide"}
+            placeholder={form.titleEn ? autoSlug(form.titleEn) : "my-slide"}
             className="w-full mt-1 p-2.5 rounded-xl font-mono text-xs"
           />
         </label>
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
-            <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Titre FR *</span>
+            <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{labels.titleFr} *</span>
             <input required value={form.titleFr} onChange={set("titleFr")} className="w-full mt-1 p-2.5 rounded-xl" />
           </label>
           <label className="block text-sm">
-            <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Titre EN *</span>
+            <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{labels.titleEn} *</span>
             <input required value={form.titleEn} onChange={set("titleEn")} className="w-full mt-1 p-2.5 rounded-xl" />
           </label>
         </div>
 
         <label className="block text-sm">
-          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Contenu FR (markdown) *</span>
+          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{labels.contentFr} *</span>
           <textarea required rows={5} value={form.contentFr} onChange={set("contentFr")} className="w-full mt-1 p-2.5 rounded-xl" />
         </label>
         <label className="block text-sm">
-          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Contenu EN (markdown) *</span>
+          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{labels.contentEn} *</span>
           <textarea required rows={5} value={form.contentEn} onChange={set("contentEn")} className="w-full mt-1 p-2.5 rounded-xl" />
         </label>
 
@@ -118,14 +117,14 @@ export default function NewSlideButton() {
             disabled={busy}
             className="btn-soft rounded-full px-4 py-2 text-sm font-medium"
           >
-            Annuler
+            {labels.cancel}
           </button>
           <button
             type="submit"
             disabled={busy}
             className="btn-brand rounded-full px-5 py-2 text-sm font-medium disabled:opacity-50 disabled:shadow-none"
           >
-            {busy ? "..." : "Créer la slide"}
+            {busy ? "..." : labels.create}
           </button>
         </div>
       </form>

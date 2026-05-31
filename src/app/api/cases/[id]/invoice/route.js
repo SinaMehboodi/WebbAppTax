@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/session";
 import { setStatus, logActivity } from "@/lib/workflow";
 import { notify } from "@/lib/notifications";
 import { can, PERMS } from "@/lib/permissions";
+import { staffCanAccessCase } from "@/lib/case-access";
 
 const VAT = 20.0; // France standard rate
 
@@ -13,6 +14,9 @@ export async function POST(_request, { params }) {
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user || !can(user, PERMS.CASE_INVOICE)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

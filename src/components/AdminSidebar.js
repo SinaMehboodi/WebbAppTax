@@ -5,17 +5,31 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import ThemeSwitcher from "./ThemeSwitcher";
 
-export default function AdminSidebar({ user, labels, locale }) {
+export default function AdminSidebar({ user, labels, locale, unreadCount = 0, canSupport = false, supportOpen = 0 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
   const NAV = [
-    { href: "/admin",              label: labels.workflow,     icon: "▦", exact: true },
-    { href: "/admin/inbox",        label: labels.inbox,        icon: "📥" },
+    { href: "/admin",              label: labels.workflow,     icon: "🧭", exact: true },
+    { href: "/admin/inbox",        label: labels.inbox,        icon: "📨" },
     { href: "/admin/cases",        label: labels.cases,        icon: "📁" },
-    { href: "/admin/reports",      label: labels.reports,      icon: "📊" },
-    { href: "/admin/users",        label: labels.users,        icon: "👤" },
-    { href: "/admin/presentation", label: labels.presentation, icon: "🎤" },
+    { href: "/admin/reports",      label: labels.reports,      icon: "📈" },
+    { href: "/admin/users",        label: labels.users,        icon: "👥" },
+    { href: "/admin/presentation", label: labels.presentation, icon: "🎬" },
+    ...(canSupport
+      ? [{
+          href: "/admin/support",
+          label: labels.support || "Support",
+          icon: "🛟",
+          badge: supportOpen > 0 ? (supportOpen > 99 ? "99+" : supportOpen) : null,
+        }]
+      : []),
+    {
+      href: "/notifications",
+      label: labels.notifications || "Notifications",
+      icon: "🔔",
+      badge: unreadCount > 0 ? (unreadCount > 99 ? "99+" : unreadCount) : null,
+    },
   ];
 
   function active(href, exact) {
@@ -69,7 +83,18 @@ export default function AdminSidebar({ user, labels, locale }) {
               `}
             >
               <span className="w-5 text-center">{item.icon}</span>
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.badge != null && (
+                <span
+                  className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-[10px] font-semibold ${
+                    active(item.href, item.exact)
+                      ? "bg-white/25 text-white"
+                      : "bg-rose-500 text-white"
+                  }`}
+                >
+                  {item.badge}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -102,6 +127,11 @@ export default function AdminSidebar({ user, labels, locale }) {
           <div className="mt-3">
             <ThemeSwitcher compact />
           </div>
+          {labels.version && (
+            <div className="mt-3 text-[10px] text-[var(--fg-muted)] tabular-nums">
+              SamTaxco {labels.version}
+            </div>
+          )}
         </div>
       </aside>
 

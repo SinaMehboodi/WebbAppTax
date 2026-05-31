@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useT } from "@/components/I18nProvider";
 
 export default function InvoiceActions({
   caseId,
@@ -13,6 +14,7 @@ export default function InvoiceActions({
   feeFlatAmount,
 }) {
   const router = useRouter();
+  const t = useT();
   const [loading, setLoading] = useState(false);
 
   async function issue() {
@@ -35,17 +37,17 @@ export default function InvoiceActions({
         <div>
           {invoice.number} ·{" "}
           {Number(invoice.amountTTC).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })} ·{" "}
-          <b>{invoice.status}</b>
+          <b>{t(`invoiceStatus.${invoice.status}`)}</b>
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/invoices/${invoice.id}`} className="underline">Open invoice</Link>
+          <Link href={`/invoices/${invoice.id}`} className="underline">{t("caseForm.openInvoice")}</Link>
           {invoice.status !== "PAID" && (
             <button
               disabled={loading}
               onClick={markPaid}
               className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 text-xs font-medium disabled:opacity-50"
             >
-              Mark paid
+              {t("admin.markPaid")}
             </button>
           )}
         </div>
@@ -56,9 +58,9 @@ export default function InvoiceActions({
   let preview = "";
   if (feeModel === "PERCENT" && feePercent && estimatedSavings) {
     const ht = Number(estimatedSavings) * (Number(feePercent) / 100);
-    preview = `Preview HT: ${ht.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}`;
+    preview = t("caseForm.previewHt", { amount: ht.toLocaleString("fr-FR", { style: "currency", currency: "EUR" }) });
   } else if (feeModel && feeFlatAmount) {
-    preview = `Preview HT: ${Number(feeFlatAmount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}`;
+    preview = t("caseForm.previewHt", { amount: Number(feeFlatAmount).toLocaleString("fr-FR", { style: "currency", currency: "EUR" }) });
   }
 
   return (
@@ -69,7 +71,7 @@ export default function InvoiceActions({
         disabled={loading}
         className="btn-brand rounded-full px-5 py-2.5 font-medium text-sm disabled:opacity-50 disabled:shadow-none"
       >
-        {loading ? "..." : "Issue invoice"}
+        {loading ? "..." : t("caseForm.issueInvoice")}
       </button>
     </div>
   );

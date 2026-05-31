@@ -5,6 +5,7 @@ import Link from "next/link";
 import LocaleSwitcher from "./LocaleSwitcher";
 import LogoutButton from "./LogoutButton";
 import HideOnAdmin from "./HideOnAdmin";
+import HideOnPath from "./HideOnPath";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 function BrandMark() {
@@ -39,18 +40,29 @@ export default function Header({ user, t, locale }) {
                 >
                   {t("nav.present")}
                 </Link>
-                <Link
-                  href="/login"
-                  className="hidden sm:inline text-[var(--fg-muted)] hover:text-[var(--fg)]"
-                >
-                  {t("nav.login")}
-                </Link>
-                <Link
-                  href="/signup"
-                  className="btn-brand rounded-full px-3.5 py-1.5 text-sm font-medium"
-                >
-                  {t("nav.signup")}
-                </Link>
+                {/* "Log in" is redundant in the header on the landing page —
+                    the hero already has an "I already have an account" link
+                    right next to its Create-account / Discover CTAs. */}
+                <HideOnPath paths={["/"]}>
+                  <Link
+                    href="/login"
+                    className="text-[var(--fg-muted)] hover:text-[var(--fg)]"
+                  >
+                    {t("nav.login")}
+                  </Link>
+                </HideOnPath>
+                {/* The landing page already has a big "Create my account" CTA in
+                    the hero, and the login page has its own "Create account"
+                    button below the form — so the signup pill is duplicate noise
+                    on both. Hide it on / and /login; show it everywhere else. */}
+                <HideOnPath paths={["/", "/login"]}>
+                  <Link
+                    href="/signup"
+                    className="btn-brand rounded-full px-3.5 py-1.5 text-sm font-medium"
+                  >
+                    {t("nav.signup")}
+                  </Link>
+                </HideOnPath>
               </>
             )}
 

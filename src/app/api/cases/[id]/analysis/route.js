@@ -2,6 +2,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { can, PERMS } from "@/lib/permissions";
+import { staffCanAccessCase } from "@/lib/case-access";
 import { setStatus, logActivity } from "@/lib/workflow";
 
 const FIELDS = [
@@ -20,6 +22,9 @@ export async function POST(request, { params }) {
   const { id } = await params;
   const user = await getCurrentUser();
   if (!user || !can(user, PERMS.CASE_ANALYZE)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+  if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
   const body = await request.json().catch(() => ({}));

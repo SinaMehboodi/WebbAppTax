@@ -39,22 +39,22 @@ export default async function Home() {
           <p className="mt-5 text-lg sm:text-xl text-[var(--fg-muted)] max-w-2xl mx-auto leading-relaxed">
             {t("landing.heroSubtitle")}
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center gap-3 max-w-md sm:max-w-none mx-auto">
             <Link
               href="/signup"
-              className="btn-brand rounded-full px-6 py-3 font-medium text-base"
+              className="btn-brand rounded-full px-6 py-3.5 font-medium text-base text-center"
             >
               {t("landing.ctaSignup")} →
             </Link>
             <Link
               href="/present"
-              className="btn-soft rounded-full px-6 py-3 font-medium text-base"
+              className="btn-soft rounded-full px-6 py-3.5 font-medium text-base text-center"
             >
               {t("landing.ctaPresent")}
             </Link>
             <Link
               href="/login"
-              className="text-sm underline text-[var(--fg-muted)] hover:text-[var(--fg)]"
+              className="text-sm underline text-[var(--fg-muted)] hover:text-[var(--fg)] py-2 text-center"
             >
               {t("landing.ctaLogin")}
             </Link>

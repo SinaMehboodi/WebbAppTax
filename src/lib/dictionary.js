@@ -3,10 +3,16 @@ import "server-only";
 import { cookies } from "next/headers";
 import fr from "@/messages/fr.json";
 import en from "@/messages/en.json";
+import { makeT } from "@/lib/i18n-core";
 
 const DICTS = { fr, en };
 export const SUPPORTED_LOCALES = ["fr", "en"];
 export const DEFAULT_LOCALE = "fr";
+
+// Raw message bundle for a locale — used to hydrate the client i18n provider.
+export function getMessages(locale) {
+  return DICTS[locale] || DICTS[DEFAULT_LOCALE];
+}
 
 export async function getLocale() {
   const store = await cookies();
@@ -20,18 +26,4 @@ export async function getDictionary(localeOverride) {
   return { locale, t: makeT(DICTS[locale] || DICTS[DEFAULT_LOCALE]) };
 }
 
-// t("a.b.c") looks up dict.a.b.c. If missing, returns the key (handy in dev).
-// t("a.b.c", { name: "Sina" }) interpolates {name}.
-export function makeT(dict) {
-  return function t(key, params) {
-    const parts = key.split(".");
-    let cur = dict;
-    for (const p of parts) {
-      if (cur && typeof cur === "object" && p in cur) cur = cur[p];
-      else return key;
-    }
-    if (typeof cur !== "string") return key;
-    if (!params) return cur;
-    return cur.replace(/\{(\w+)\}/g, (_, k) => (k in params ? String(params[k]) : `{${k}}`));
-  };
-}
+export { makeT };

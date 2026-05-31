@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 
 export default function EditForm({ initial }) {
   const router = useRouter();
+  const t = useT();
   const [form, setForm] = useState({
     titleFr: initial.titleFr,
     titleEn: initial.titleEn,
@@ -32,7 +34,7 @@ export default function EditForm({ initial }) {
     });
     setSaving(false);
     if (!res.ok) {
-      setError("Erreur — vérifiez les champs.");
+      setError(t("admin.slideGenericError"));
       return;
     }
     router.push("/admin/presentation");
@@ -45,7 +47,7 @@ export default function EditForm({ initial }) {
     const res = await fetch(`/api/admin/presentation/${initial.id}`, { method: "DELETE" });
     setDeleting(false);
     if (!res.ok) {
-      setError("Suppression impossible.");
+      setError(t("admin.deleteSlideError"));
       setConfirmDelete(false);
       return;
     }
@@ -57,16 +59,16 @@ export default function EditForm({ initial }) {
     <form onSubmit={onSubmit} className="space-y-3 text-sm">
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Titre FR</span>
+          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{t("admin.titleFr")}</span>
           <input value={form.titleFr} onChange={set("titleFr")} className="w-full mt-1 p-2.5 rounded-xl" />
         </label>
         <label className="block">
-          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Titre EN</span>
+          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{t("admin.titleEn")}</span>
           <input value={form.titleEn} onChange={set("titleEn")} className="w-full mt-1 p-2.5 rounded-xl" />
         </label>
       </div>
       <label className="block">
-        <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Contenu FR (markdown)</span>
+        <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{t("admin.contentFr")}</span>
         <textarea
           rows={8}
           value={form.contentFr}
@@ -75,7 +77,7 @@ export default function EditForm({ initial }) {
         />
       </label>
       <label className="block">
-        <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Contenu EN (markdown)</span>
+        <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{t("admin.contentEn")}</span>
         <textarea
           rows={8}
           value={form.contentEn}
@@ -85,7 +87,7 @@ export default function EditForm({ initial }) {
       </label>
       <div className="flex items-center gap-4 flex-wrap">
         <label className="block">
-          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">Ordre</span>
+          <span className="text-xs uppercase tracking-wider text-[var(--fg-muted)]">{t("admin.slideOrder")}</span>
           <input
             type="number"
             value={form.order}
@@ -95,7 +97,7 @@ export default function EditForm({ initial }) {
         </label>
         <label className="flex items-center gap-2 mt-5">
           <input type="checkbox" checked={form.isActive} onChange={set("isActive")} className="h-4 w-4 accent-[color:var(--brand-500)]" />
-          <span>Active</span>
+          <span>{t("admin.slideActive")}</span>
         </label>
       </div>
 
@@ -114,7 +116,7 @@ export default function EditForm({ initial }) {
               disabled={deleting}
               className="rounded-full bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 text-sm disabled:opacity-50"
             >
-              {deleting ? "..." : "Confirmer la suppression"}
+              {deleting ? "..." : t("admin.confirmDeleteSlide")}
             </button>
             <button
               type="button"
@@ -122,7 +124,7 @@ export default function EditForm({ initial }) {
               disabled={deleting}
               className="btn-soft rounded-full px-4 py-2 text-sm"
             >
-              Annuler
+              {t("common.cancel")}
             </button>
           </span>
         ) : (
@@ -131,7 +133,7 @@ export default function EditForm({ initial }) {
             onClick={() => setConfirmDelete(true)}
             className="rounded-full border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 px-4 py-2 text-sm hover:bg-rose-50 dark:hover:bg-rose-950/30"
           >
-            Supprimer la slide
+            {t("admin.deleteSlide")}
           </button>
         )}
 
@@ -140,7 +142,7 @@ export default function EditForm({ initial }) {
           disabled={saving || confirmDelete}
           className="btn-brand rounded-full px-5 py-2.5 font-medium text-sm disabled:opacity-50 disabled:shadow-none"
         >
-          {saving ? "..." : "Enregistrer"}
+          {saving ? "..." : t("common.save")}
         </button>
       </div>
     </form>

@@ -6,6 +6,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { staffCanAccessCase } from "@/lib/case-access";
+import { can, PERMS } from "@/lib/permissions";
 import { notify } from "@/lib/notifications";
 import { rateLimit, rlKey } from "@/lib/rate-limit";
 import { getClientIp } from "@/lib/audit";
@@ -26,8 +28,12 @@ export async function GET(request, { params }) {
   });
   if (!c) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const isStaff = user.role === "ADMIN" || user.role === "EMPLOYEE";
-  if (user.role === "USER" && c.ownerId !== user.id) {
+  const isStaff = ["ADMIN", "EMPLOYEE", "SUPER_ADMIN"].includes(user.role);
+  if (user.role === "USER") {
+    if (c.ownerId !== user.id) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  } else if (!(await staffCanAccessCase(user, id))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -81,8 +87,18 @@ export async function POST(request, { params }) {
   });
   if (!c) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const allowedInternal = user.role === "ADMIN" || user.role === "EMPLOYEE";
-  if (user.role === "USER" && c.ownerId !== user.id) {
+  const allowedInternal = ["ADMIN", "EMPLOYEE", "SUPER_ADMIN"].includes(user.role);
+  if (user.role === "USER") {
+    if (c.ownerId !== user.id) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+  } else if (!(await staffCanAccessCase(user, id))) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  // Staff additionally need the case.comment capability to reply. Clients
+  // always keep their own channel to the company (no permission required).
+  if (user.role !== "USER" && !can(user, PERMS.CASE_COMMENT)) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

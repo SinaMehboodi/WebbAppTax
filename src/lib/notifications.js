@@ -65,9 +65,29 @@ export async function notify({
   return n;
 }
 
+// notifyStaff — broadcast to people who should know about a NEW case.
+//
+// Policy: a new case is private until a head of department (ADMIN or
+// SUPER_ADMIN) assigns it. So we ONLY notify:
+//   - SUPER_ADMIN + ADMIN (always — these are the "heads of department")
+//   - EMPLOYEEs who hold the `case.view_all` permission (acting managers)
+//
+// Regular employees — even if they happen to be the client's reference rep —
+// do NOT get pinged about cases they couldn't see anyway. They learn about
+// a case only when explicitly assigned to it (notifyAssignment / notify
+// targets them directly at that point).
+const CASE_VIEW_ALL = "case.view_all";
+
 export async function notifyStaff({ titleKey, bodyKey, link, params, caseId }) {
   const staff = await prisma.user.findMany({
-    where: { role: { in: ["ADMIN", "EMPLOYEE"] } },
+    where: {
+      active: true,
+      OR: [
+        { role: "SUPER_ADMIN" },
+        { role: "ADMIN" },
+        { role: "EMPLOYEE", permissions: { has: CASE_VIEW_ALL } },
+      ],
+    },
     select: { id: true },
   });
   await Promise.all(

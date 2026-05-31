@@ -160,7 +160,7 @@ export default async function ReportsPage({ searchParams }) {
           <table className="w-full text-sm">
             <thead className="bg-[var(--surface-2)]">
               <tr className="text-left">
-                <th className="p-3 font-medium">Réf.</th>
+                <th className="p-3 font-medium">{fr ? "Réf." : "Ref."}</th>
                 <th className="p-3 font-medium">{fr ? "Client" : "Client"}</th>
                 <th className="p-3 font-medium">{fr ? "Type" : "Type"}</th>
                 <th className="p-3 font-medium">{fr ? "Année" : "Year"}</th>

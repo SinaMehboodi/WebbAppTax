@@ -4,12 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { getDictionary } from "@/lib/dictionary";
 import { getCurrentUser } from "@/lib/session";
 import { can, canGrantPerms, PERMS } from "@/lib/permissions";
+import { roleSolid } from "@/lib/uiColors";
 import UserActiveToggle from "./UserActiveToggle";
 import NewEmployeeButton from "./NewEmployeeButton";
 import RegisterClientButton from "./RegisterClientButton";
 import SuperAdminActions from "./SuperAdminActions";
 
-export default async function UsersPage() {
+const VALID_ROLES = ["USER", "EMPLOYEE", "ADMIN", "SUPER_ADMIN"];
+
+export default async function UsersPage({ searchParams }) {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
   const canDeactivate    = can(me, PERMS.USERS_DEACTIVATE);
@@ -18,7 +21,22 @@ export default async function UsersPage() {
   const canModify        = can(me, PERMS.USERS_MODIFY);
   const canGrant         = canGrantPerms(me);
 
+  const sp = (await searchParams) || {};
+  const roleFilter = typeof sp.role === "string" && VALID_ROLES.includes(sp.role) ? sp.role : null;
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+
+  const where = {};
+  if (roleFilter) where.role = roleFilter;
+  if (q) {
+    where.OR = [
+      { email:     { contains: q, mode: "insensitive" } },
+      { firstName: { contains: q, mode: "insensitive" } },
+      { lastName:  { contains: q, mode: "insensitive" } },
+    ];
+  }
+
   const users = await prisma.user.findMany({
+    where,
     orderBy: [{ role: "asc" }, { createdAt: "desc" }],
     select: {
       id: true, email: true, firstName: true, lastName: true, role: true,
@@ -55,6 +73,50 @@ export default async function UsersPage() {
           {canCreate && <NewEmployeeButton fr={fr} />}
         </div>
       </header>
+
+      {/* Filter row — role chips + search input. Keeps everything server-rendered
+          using a GET form (matches the All Cases filter pattern). */}
+      <form method="GET" className="card p-3 flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+        <div className="flex flex-wrap gap-1.5 items-center sm:flex-1">
+          <Link
+            href="/admin/users"
+            className={`text-xs px-3 py-1.5 rounded-full border ${
+              !roleFilter ? "btn-brand border-transparent" : "border-[var(--border)] hover:border-[var(--brand-500)]"
+            }`}
+          >
+            {fr ? "Tous" : "All"}
+          </Link>
+          {VALID_ROLES.map((r) => {
+            const on = roleFilter === r;
+            const tone = roleSolid(r);
+            return (
+              <Link
+                key={r}
+                href={`/admin/users?role=${r}`}
+                className={`text-xs px-3 py-1.5 rounded-full border font-medium ${on ? tone : "border-[var(--border)] hover:border-[var(--brand-500)]"}`}
+              >
+                {r === "USER" ? (fr ? "Clients" : "Clients")
+                  : r === "EMPLOYEE" ? (fr ? "Commerciaux" : "Reps")
+                  : r === "ADMIN" ? "Admin"
+                  : "Super admin"}
+              </Link>
+            );
+          })}
+        </div>
+        <div className="relative sm:w-72">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--fg-muted)]">
+            <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            name="q"
+            defaultValue={q}
+            placeholder={fr ? "Rechercher un nom ou email…" : "Search name or email…"}
+            className="w-full pl-9 pr-3 py-2 rounded-xl text-sm"
+          />
+          {roleFilter && <input type="hidden" name="role" value={roleFilter} />}
+        </div>
+      </form>
 
       {/* Stat tiles */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -180,14 +242,8 @@ function StatTile({ label, value, tone }) {
 }
 
 function RoleChip({ role }) {
-  const map = {
-    SUPER_ADMIN: "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/30 dark:text-violet-200 dark:border-violet-800/60",
-    ADMIN:       "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800/60",
-    EMPLOYEE:    "bg-sky-100 text-sky-800 border-sky-200 dark:bg-sky-900/30 dark:text-sky-200 dark:border-sky-800/60",
-    USER:        "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800/60",
-  };
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium border ${map[role] || map.USER}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${roleSolid(role)}`}>
       {role.replace("_", " ")}
     </span>
   );

@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import SignupForm from "./SignupForm";
+import SupportWidget from "@/components/SupportWidget";
 import Link from "next/link";
 
 // `searchParams` carries `?rep=<userId>&ref=<referralCode>` set by the
@@ -65,6 +66,7 @@ export default async function SignupPage({ searchParams }) {
           <Link href="/login" className="underline">{t("signup.loginLink")}</Link>
         </div>
       </div>
+      <SupportWidget />
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import "./globals.css";
-import { getDictionary } from "@/lib/dictionary";
+import { getDictionary, getMessages } from "@/lib/dictionary";
+import I18nProvider from "@/components/I18nProvider";
 import Header from "@/components/Header";
 import HideOnAdmin from "@/components/HideOnAdmin";
 import BottomNav from "@/components/BottomNav";
@@ -20,17 +21,28 @@ async function getThemeAttrs() {
   return { dataTheme: undefined, pref: "auto" };
 }
 
-// Inline script — runs synchronously before paint. Resolves "auto" using
-// matchMedia and slaps data-theme on <html> so no flash.
+// Resolves the active theme onto <html> before first paint so there is no
+// flash of the wrong theme. Inlined (not an external file) on purpose: it runs
+// with zero network latency on the very first paint — exactly when a no-cookie
+// "auto" visitor would otherwise flash light->dark.
+//
+// Heads-up for future me: Next 16 / React 19 logs a DEV-ONLY console.error
+// ("Encountered a script tag while rendering React component") for ANY
+// executable <script> in the component tree — inline OR external `src` alike
+// (React keys the check on the script's `type` and never runs
+// component-rendered scripts during the client pass). It is harmless here: this
+// tag lives in the SSR HTML, so the browser executes it before paint on the
+// initial load; the message is stripped from production builds and does not
+// affect the theme. Moving it to an external file does NOT remove the warning.
 const THEME_BOOT = `
-(function() {
+(function () {
   try {
     var html = document.documentElement;
-    var pref = html.getAttribute('data-theme-pref') || 'auto';
-    var resolved = html.getAttribute('data-theme');
-    if (!resolved) {
-      resolved = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-      html.setAttribute('data-theme', resolved);
+    if (!html.getAttribute('data-theme')) {
+      html.setAttribute(
+        'data-theme',
+        window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      );
     }
   } catch (e) {}
 })();
@@ -64,6 +76,7 @@ export const viewport = {
 
 export default async function RootLayout({ children }) {
   const { locale, t } = await getDictionary();
+  const messages = getMessages(locale);
   const user = await getCurrentUser();
   const showBottomNav = user && user.role === "USER";
   const { dataTheme, pref } = await getThemeAttrs();
@@ -76,30 +89,36 @@ export default async function RootLayout({ children }) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* Runs before first paint (it ships in the SSR HTML) so the resolved
+            theme is on <html> before anything renders — no flash. See
+            THEME_BOOT above for why the dev-only React "script tag" console
+            message it triggers is harmless. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <Header user={user} t={t} locale={locale} />
-        <main className={`flex-1 flex flex-col ${showBottomNav ? "pb-nav" : ""}`}>
-          {children}
-        </main>
-        <HideOnAdmin>
-          <footer className="text-xs text-[var(--fg-muted)] px-4 py-6 text-center safe-bottom">
-            © {new Date().getFullYear()} SamTaxco · {t("app.tagline")}
-          </footer>
-        </HideOnAdmin>
-        <SwRegister />
-        {showBottomNav && (
-          <BottomNav
-            labels={{
-              dashboard:     t("nav.dashboard"),
-              cases:         t("nav.cases"),
-              newCase:       t("dashboard.newCase"),
-              notifications: t("nav.notifications"),
-              referral:      t("nav.referral"),
-            }}
-          />
-        )}
+        <I18nProvider locale={locale} messages={messages}>
+          <Header user={user} t={t} locale={locale} />
+          <main className={`flex-1 flex flex-col ${showBottomNav ? "pb-nav" : ""}`}>
+            {children}
+          </main>
+          <HideOnAdmin>
+            <footer className="text-xs text-[var(--fg-muted)] px-4 py-6 text-center safe-bottom">
+              © {new Date().getFullYear()} SamTaxco · {t("app.tagline")}
+            </footer>
+          </HideOnAdmin>
+          <SwRegister />
+          {showBottomNav && (
+            <BottomNav
+              labels={{
+                dashboard:     t("nav.dashboard"),
+                cases:         t("nav.cases"),
+                newCase:       t("dashboard.newCase"),
+                notifications: t("nav.notifications"),
+                referral:      t("nav.referral"),
+              }}
+            />
+          )}
+        </I18nProvider>
       </body>
     </html>
   );

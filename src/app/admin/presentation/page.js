@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDictionary } from "@/lib/dictionary";
+import { paletteFor } from "@/lib/slideColors";
 import NewSlideButton from "./NewSlideButton";
 
 export default async function PresentationManagerPage() {
@@ -16,7 +17,20 @@ export default async function PresentationManagerPage() {
           <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">{t("admin.presentation")}</h1>
           <p className="text-sm text-[var(--fg-muted)] mt-1">{t("admin.presentationSubtitle")}</p>
         </div>
-        <NewSlideButton />
+        <NewSlideButton
+          labels={{
+            newSlide: t("admin.newSlide"),
+            slug: t("admin.slideSlug"),
+            titleFr: t("admin.titleFr"),
+            titleEn: t("admin.titleEn"),
+            contentFr: t("admin.contentFr"),
+            contentEn: t("admin.contentEn"),
+            cancel: t("common.cancel"),
+            create: t("admin.createSlide"),
+            slugTaken: t("admin.slugTaken"),
+            genericError: t("admin.slideGenericError"),
+          }}
+        />
       </header>
 
       {sections.length === 0 ? (
@@ -26,30 +40,37 @@ export default async function PresentationManagerPage() {
         </div>
       ) : (
         <div className="card overflow-hidden divide-y divide-[var(--border)]">
-          {sections.map((s) => (
-            <Link
-              key={s.id}
-              href={`/admin/presentation/${s.id}`}
-              className="block p-4 hover:bg-[var(--surface-2)] transition"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0 flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-xl bg-[var(--surface-2)] border border-[var(--border)] flex items-center justify-center text-xs font-mono text-[var(--fg-muted)] shrink-0">
-                    {String(s.order).padStart(2, "0")}
+          {sections.map((s) => {
+            const p = paletteFor(s.order);
+            return (
+              <Link
+                key={s.id}
+                href={`/admin/presentation/${s.id}`}
+                className="block p-4 hover:bg-[var(--surface-2)] transition"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0 flex items-center gap-3">
+                    <div
+                      className="h-10 w-10 rounded-2xl flex items-center justify-center text-sm font-semibold shrink-0 shadow-sm"
+                      style={{ background: p.bgSoft, color: p.fg, border: `1px solid ${p.border}` }}
+                      aria-hidden
+                    >
+                      {String(s.order).padStart(2, "0")}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{s.titleFr}</div>
+                      <div className="text-xs text-[var(--fg-muted)] truncate">{s.slug} · {s.titleEn}</div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">{s.titleFr}</div>
-                    <div className="text-xs text-[var(--fg-muted)] truncate">{s.slug} · {s.titleEn}</div>
-                  </div>
+                  {!s.isActive && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800/80 dark:text-zinc-300 dark:border-zinc-700 shrink-0">
+                      {t("admin.slideInactive")}
+                    </span>
+                  )}
                 </div>
-                {!s.isActive && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800/80 dark:text-zinc-300 dark:border-zinc-700 shrink-0">
-                    {t("admin.slideInactive")}
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

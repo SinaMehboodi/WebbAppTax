@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
 import { getDictionary } from "@/lib/dictionary";
 import { can, PERMS } from "@/lib/permissions";
+import { canAccessCaseRow } from "@/lib/case-access";
 import StatusBadge from "@/components/StatusBadge";
 import ContractForm from "./ContractForm";
 import DocRequestForm from "./DocRequestForm";
@@ -17,6 +18,7 @@ import CloseCaseDialog from "./CloseCaseDialog";
 import AssignmentManager from "./AssignmentManager";
 import DangerZone from "./DangerZone";
 import DocumentTile from "@/components/DocumentTile";
+import { buildDocLabels } from "@/lib/docLabels";
 
 const TERMINAL = new Set(["CLOSED", "STOPPED", "CANCELLED"]);
 
@@ -57,6 +59,9 @@ export default async function AdminCaseDetail({ params }) {
     }),
   ]);
   if (!c) notFound();
+  // Staff may only open cases they can view-all, manage, or are assigned to.
+  // Hide (404) rather than reveal a case an employee isn't assigned to.
+  if (!canAccessCaseRow(me, c)) notFound();
   const { t, locale } = await getDictionary();
   const fr = locale === "fr";
 
@@ -195,7 +200,7 @@ export default async function AdminCaseDetail({ params }) {
             ) : (
               <div className="grid sm:grid-cols-2 gap-3">
                 {c.documents.map((d) => (
-                  <DocumentTile key={d.id} doc={d} canDelete={true} />
+                  <DocumentTile key={d.id} doc={d} canDelete={true} labels={buildDocLabels(t)} />
                 ))}
               </div>
             )}

@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useT } from "@/components/I18nProvider";
 
 const BRANCHES = [
-  { value: "PROCEEDING", labelKey: "Proceed — optimization identified" },
-  { value: "NOT_PROCEEDING", labelKey: "No action — no optimization" },
-  { value: "AUDIT_OFFERED", labelKey: "Offer audit / advisory mission" },
+  { value: "PROCEEDING", labelKey: "admin.decisionProceed" },
+  { value: "NOT_PROCEEDING", labelKey: "admin.decisionNoAction" },
+  { value: "AUDIT_OFFERED", labelKey: "admin.decisionAudit" },
 ];
 
 export default function DecisionForm({ caseId }) {
   const router = useRouter();
+  const t = useT();
   const [branch, setBranch] = useState("PROCEEDING");
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,13 +49,13 @@ export default function DecisionForm({ caseId }) {
               onChange={() => setBranch(b.value)}
               className="sr-only"
             />
-            <span className="font-medium">{b.labelKey}</span>
+            <span className="font-medium">{t(b.labelKey)}</span>
           </label>
         ))}
       </div>
       <textarea
         rows={3}
-        placeholder="Note visible to client"
+        placeholder={t("admin.decisionNotePlaceholder")}
         value={note}
         onChange={(e) => setNote(e.target.value)}
         className="w-full p-2.5 rounded-xl"
@@ -62,7 +64,7 @@ export default function DecisionForm({ caseId }) {
         disabled={loading}
         className="btn-brand rounded-full px-5 py-2.5 font-medium text-sm disabled:opacity-50 disabled:shadow-none"
       >
-        {loading ? "..." : "Submit decision"}
+        {loading ? "..." : t("admin.submitDecision")}
       </button>
     </form>
   );

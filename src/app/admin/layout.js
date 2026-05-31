@@ -6,6 +6,9 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getDictionary } from "@/lib/dictionary";
+import { prisma } from "@/lib/prisma";
+import { can, PERMS } from "@/lib/permissions";
+import { APP_VERSION_LABEL } from "@/lib/version";
 import AdminSidebar from "@/components/AdminSidebar";
 
 export default async function AdminLayout({ children }) {
@@ -13,6 +16,20 @@ export default async function AdminLayout({ children }) {
   if (!user) redirect("/login");
   if (!["ADMIN", "EMPLOYEE", "SUPER_ADMIN"].includes(user.role)) redirect("/");
   const { t, locale } = await getDictionary();
+
+  const canSupport = can(user, PERMS.SUPPORT_VIEW);
+
+  // Live counters for the sidebar (unread bell + open support threads). These
+  // are cosmetic badges — a transient DB hiccup must never take down the whole
+  // back-office, so each count fails soft to 0.
+  const [unreadCount, supportOpen] = await Promise.all([
+    prisma.notification
+      .count({ where: { userId: user.id, readAt: null } })
+      .catch(() => 0),
+    canSupport
+      ? prisma.supportThread.count({ where: { status: "OPEN" } }).catch(() => 0)
+      : Promise.resolve(0),
+  ]);
 
   const labels = {
     backOffice: t("admin.title"),
@@ -22,8 +39,11 @@ export default async function AdminLayout({ children }) {
     reports: t("admin.reports"),
     users: t("admin.users"),
     presentation: t("admin.presentation"),
+    support: t("admin.support"),
+    notifications: t("nav.notifications"),
     logout: t("nav.logout"),
     account: t("nav.account"),
+    version: APP_VERSION_LABEL,
   };
 
   // Strip the password field (and anything else not needed by the sidebar).
@@ -37,7 +57,7 @@ export default async function AdminLayout({ children }) {
 
   return (
     <div className="flex-1 flex min-h-0">
-      <AdminSidebar user={safeUser} labels={labels} locale={locale} />
+      <AdminSidebar user={safeUser} labels={labels} locale={locale} unreadCount={unreadCount} canSupport={canSupport} supportOpen={supportOpen} />
       <div className="flex-1 min-w-0 overflow-x-hidden">{children}</div>
     </div>
   );

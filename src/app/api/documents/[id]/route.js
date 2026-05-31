@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/session";
 import { getFile, presignedGetUrl } from "@/lib/storage";
 import { logActivity } from "@/lib/workflow";
 import { can, PERMS } from "@/lib/permissions";
+import { staffCanAccessCase } from "@/lib/case-access";
 
 const PROTECTED_KINDS = new Set(["CONTRACT", "MANDATE", "SIGNED_DOC", "INVOICE"]);
 
@@ -24,7 +25,8 @@ export async function GET(_request, { params }) {
 
   const isOwner = doc.case && doc.case.ownerId === user.id;
   const isStaff = ["ADMIN", "EMPLOYEE", "SUPER_ADMIN"].includes(user.role);
-  if (!isOwner && !isStaff) {
+  const staffOk = isStaff && (!doc.caseId || (await staffCanAccessCase(user, doc.caseId)));
+  if (!isOwner && !staffOk) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -59,8 +61,9 @@ export async function DELETE(_request, { params }) {
 
   const isOwner = doc.case && doc.case.ownerId === user.id;
   const isStaff = ["ADMIN", "EMPLOYEE", "SUPER_ADMIN"].includes(user.role);
+  const staffOk = isStaff && (!doc.caseId || (await staffCanAccessCase(user, doc.caseId)));
 
-  if (!isOwner && !isStaff) {
+  if (!isOwner && !staffOk) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

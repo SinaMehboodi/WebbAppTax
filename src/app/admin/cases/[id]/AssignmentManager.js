@@ -7,6 +7,7 @@
 //   - Remove button per assignee
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { avatarSolid, initialsOf } from "@/lib/uiColors";
 
 export default function AssignmentManager({
   caseId,
@@ -83,14 +84,12 @@ export default function AssignmentManager({
               <li key={a.id} className="flex items-center justify-between gap-3 text-sm">
                 <div className="flex items-center gap-2 min-w-0">
                   <span
-                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold ${
-                      isPrimary
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
-                        : "bg-[var(--surface-2)] text-[var(--fg-muted)] border border-[var(--border)]"
-                    }`}
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold ${avatarSolid(
+                      `${a.firstName} ${a.lastName}`
+                    )} ${isPrimary ? "ring-2 ring-amber-400 ring-offset-1 ring-offset-[var(--surface-1)]" : ""}`}
                     title={isPrimary ? (fr ? "Responsable principal" : "Primary manager") : ""}
                   >
-                    {(a.firstName?.[0] || "?") + (a.lastName?.[0] || "")}
+                    {initialsOf(a.firstName, a.lastName)}
                   </span>
                   <div className="min-w-0">
                     <div className="font-medium truncate">
