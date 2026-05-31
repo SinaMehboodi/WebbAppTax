@@ -41,7 +41,7 @@ export default function AdminSidebar({ user, labels, locale, unreadCount = 0, ca
       title: null,
       items: [
         {
-          href: "/notifications",
+          href: "/admin/notifications",
           label: labels.notifications || "Notifications",
           icon: "🔔",
           c: 2,
