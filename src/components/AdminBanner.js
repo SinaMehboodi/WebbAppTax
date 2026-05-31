@@ -57,9 +57,7 @@ export default function AdminBanner({ role, firstName, lastName, locale, contain
         {topInset && <div className="h-14 md:hidden" />}
 
         <div className="flex items-center gap-3.5">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur text-lg font-semibold tracking-tight">
-            {initials}
-          </div>
+          <BrandLogo className="h-12 w-12 shrink-0" label={initials} />
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-white/70">
               {isStaff ? "Back-office" : (fr ? "Espace client" : "Client area")}
