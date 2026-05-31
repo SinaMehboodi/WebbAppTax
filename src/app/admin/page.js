@@ -1,8 +1,9 @@
 // Admin workflow board — counts by status, KPIs, recent activity.
+// The role-tinted welcome banner now lives in the shared AdminBanner (rendered
+// by the admin layout on every back-office page), so this page starts at the KPIs.
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDictionary } from "@/lib/dictionary";
-import { getCurrentUser } from "@/lib/session";
 
 const KPI_GROUPS = [
   { key: "awaitingContract",  statuses: ["CONTRACT_PREPARING"], tone: "amber",   icon: "📝" },
@@ -13,19 +14,8 @@ const KPI_GROUPS = [
   { key: "invoiced",          statuses: ["INVOICED"],           tone: "amber",   icon: "€" },
 ];
 
-// Role-tinted hello banner. Each role gets a distinct gradient that matches
-// its role chip in /admin/users so the user instantly knows which permission
-// context they're in.
-const ROLE_BANNER = {
-  SUPER_ADMIN: "linear-gradient(135deg,#fb7185 0%,#f43f5e 50%,#e11d48 100%)", // coral — matches the SUPER_ADMIN role chip
-  ADMIN:       "linear-gradient(135deg,#8b5cf6 0%,#7c3aed 50%,#6d28d9 100%)", // lavender/violet — matches the ADMIN role chip
-  EMPLOYEE:    "linear-gradient(135deg,#2dd4bf 0%,#14b8a6 50%,#0d9488 100%)", // teal — matches the EMPLOYEE role chip
-  USER:        "linear-gradient(135deg,#38bdf8 0%,#0ea5e9 50%,#0284c7 100%)", // blue — matches the USER role chip
-};
-
 export default async function AdminHome() {
   const { t, locale } = await getDictionary();
-  const me = await getCurrentUser();
   const fr = locale === "fr";
 
   const [users, casesCount, paidAgg, recentActivity, byStatus] = await Promise.all([
@@ -48,35 +38,6 @@ export default async function AdminHome() {
 
   return (
     <div className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 sm:py-8 space-y-6 animate-rise">
-      {/* Welcome hero — tinted by role so SUPER_ADMIN / ADMIN / EMPLOYEE
-          banners are visually distinct (matches role chip palette). */}
-      <header
-        className="relative overflow-hidden rounded-3xl p-6 sm:p-7 text-white shadow-lift"
-        style={{ background: ROLE_BANNER[me?.role] || ROLE_BANNER.EMPLOYEE }}
-      >
-        <div
-          className="absolute inset-0 opacity-30 pointer-events-none"
-          style={{
-            backgroundImage:
-              "radial-gradient(400px circle at 80% 20%, rgba(255,255,255,.25), transparent 50%)," +
-              // Neutral white sheen (not amber) so the overlay reads cleanly on
-              // every role hue — coral / lavender / teal / blue alike.
-              "radial-gradient(500px circle at 10% 90%, rgba(255,255,255,.18), transparent 55%)",
-          }}
-        />
-        <div className="relative space-y-1">
-          <p className="text-xs uppercase tracking-widest text-white/80">
-            {new Date().toLocaleDateString(fr ? "fr-FR" : "en-US", { weekday: "long", day: "numeric", month: "long" })}
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            {fr ? "Bonjour " : "Hello "}{me?.firstName || ""}
-          </h1>
-          <p className="text-white/90 max-w-xl text-sm">
-            {fr ? "Voici l'état du back-office." : "Here's the back-office snapshot."}
-          </p>
-        </div>
-      </header>
-
       {/* Big KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KpiBig label={fr ? "Clients" : "Clients"} value={users} href="/admin/users?role=USER" tone="emerald" icon="👤" />

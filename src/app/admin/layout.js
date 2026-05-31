@@ -10,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { can, PERMS } from "@/lib/permissions";
 import { APP_VERSION_LABEL } from "@/lib/version";
 import AdminSidebar from "@/components/AdminSidebar";
+import AdminBanner from "@/components/AdminBanner";
 
 export default async function AdminLayout({ children }) {
   const user = await getCurrentUser();
@@ -58,7 +59,10 @@ export default async function AdminLayout({ children }) {
   return (
     <div className="flex-1 flex min-h-0">
       <AdminSidebar user={safeUser} labels={labels} locale={locale} unreadCount={unreadCount} canSupport={canSupport} supportOpen={supportOpen} />
-      <div className="flex-1 min-w-0 overflow-x-hidden admin-content-pad safe-bottom safe-x">{children}</div>
+      <div className="flex-1 min-w-0 overflow-x-hidden safe-bottom">
+        <AdminBanner role={user.role} firstName={user.firstName} locale={locale} labels={labels} />
+        {children}
+      </div>
     </div>
   );
 }

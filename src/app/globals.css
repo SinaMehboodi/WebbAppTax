@@ -137,6 +137,15 @@ html[data-native] {
     --safe-bottom: max(env(safe-area-inset-bottom, 0px), 0.85rem);
   }
 }
+/* Reliable fallback: any phone-width viewport — including the installed APK,
+   where the Android WebView reports env(safe-area-inset-*) as 0 — reserves space
+   for the status bar / home indicator. Desktop (>=768px) keeps a zero inset. */
+@media (max-width: 767px) {
+  :root {
+    --safe-top:    max(env(safe-area-inset-top, 0px), 2.75rem);
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), 0.85rem);
+  }
+}
 
 .safe-top       { padding-top: var(--safe-top); }
 .safe-bottom    { padding-bottom: var(--safe-bottom); }
