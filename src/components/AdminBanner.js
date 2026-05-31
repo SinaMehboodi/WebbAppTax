@@ -67,10 +67,11 @@ export default function AdminBanner({ role, firstName, lastName, locale, contain
               {fr ? "Bonjour" : "Hello"} {fullName}
             </h1>
           </div>
-          {/* Minimal brand mark — mirrors the avatar on the right, glass style. */}
+          {/* Minimal brand mark — mirrors the avatar; same two rings as the main logo. */}
           <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-            <span className="absolute h-7 w-7 rounded-full ring-1 ring-white/30" />
-            <span className="relative text-[12px] font-bold tracking-tight text-white">S.co</span>
+            <span className="absolute h-[34px] w-[34px] rounded-full border border-[#10b981]" />
+            <span className="absolute h-[24px] w-[24px] rounded-full border border-[#0ea5e9]" />
+            <span className="relative text-[11px] font-bold tracking-tight text-white">S.co</span>
           </div>
         </div>
 
