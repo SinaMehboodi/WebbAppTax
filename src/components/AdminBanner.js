@@ -5,6 +5,7 @@
 // live date & time and the role, a mesh-gradient backdrop and a faint brand
 // watermark. Page-agnostic — the page's own NAME is a heading BELOW the banner.
 import { useEffect, useState } from "react";
+import BrandLogo from "./BrandLogo";
 
 const ROLE_BANNER = {
   SUPER_ADMIN: "linear-gradient(135deg,#fb7185 0%,#f43f5e 48%,#be123c 100%)", // coral
@@ -67,12 +68,8 @@ export default function AdminBanner({ role, firstName, lastName, locale, contain
               {fr ? "Bonjour" : "Hello"} {fullName}
             </h1>
           </div>
-          {/* Minimal brand mark — mirrors the avatar; same two rings as the main logo. */}
-          <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 backdrop-blur">
-            <span className="absolute h-[34px] w-[34px] rounded-full border border-[#10b981]" />
-            <span className="absolute h-[24px] w-[24px] rounded-full border border-[#0ea5e9]" />
-            <span className="relative text-[11px] font-bold tracking-tight text-white">S.co</span>
-          </div>
+          {/* Exact same mark as the main menu logo. */}
+          <BrandLogo className="h-12 w-12 shrink-0" />
         </div>
 
         <div className="mt-3.5 flex flex-wrap items-center gap-2 text-white/90">
