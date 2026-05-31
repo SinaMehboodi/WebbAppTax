@@ -40,6 +40,7 @@ export const OPEN_STATUSES = [
   "ADMIN_RESPONSE",
   "RESULT_DELIVERED",
   "INVOICED",
+  "PAID",
 ];
 
 // Clients see their case as soon as they upload the notice, with a friendly

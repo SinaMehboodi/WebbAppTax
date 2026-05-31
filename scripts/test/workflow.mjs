@@ -125,10 +125,25 @@ export async function runWorkflows(staff) {
     const paid = await prisma.invoice.findUnique({ where: { id: inv.data.invoiceId } });
     check("C1: invoice PAID + paidAt", paid?.status === "PAID" && !!paid?.paidAt, paid?.status);
     row = await caseRow(c);
-    check("C1: case CLOSED", row?.status === "CLOSED", row?.status);
-    check("C1: case archived", row?.archived === true);
+    check("C1: after payment -> PAID, still open", row?.status === "PAID" && row?.archived === false, `${row?.status}/${row?.archived}`);
     check("C1: invoice.issued + invoice.paid logged",
       (await actCount(c, "invoice.issued")) === 1 && (await actCount(c, "invoice.paid")) === 1);
+
+    // Post-payment — tax administration's response is recorded & sent to client.
+    const arNoLetter = await req("POST", `/api/cases/${c}/admin-response`, { j: samuel.jar, json: {} });
+    check("C1: admin-response blocked until letter attached = 400", arNoLetter.status === 400, `${arNoLetter.status}`);
+    const upL = await uploadDoc(samuel.jar, c, { kind: "ADMIN_RESPONSE" });
+    check("C1: staff uploads admin letter = 201", upL.status === 201, `${upL.status}`);
+    const ar = await req("POST", `/api/cases/${c}/admin-response`, { j: samuel.jar, json: {} });
+    check("C1: record tax-office response = ok", ar.status === 200, `${ar.status} ${ar.data?.error || ""}`);
+    check("C1: status ADMIN_RESPONSE", (await st(c)) === "ADMIN_RESPONSE");
+    check("C1: client notified of response",
+      (await prisma.notification.count({ where: { caseId: c, titleKey: "adminResp.notifyTitle" } })) >= 1);
+    const fin = await req("POST", `/api/cases/${c}/close`, { j: samuel.jar, json: { outcome: "finish" } });
+    check("C1: close (finish) = ok", fin.status === 200, `${fin.status}`);
+    row = await caseRow(c);
+    check("C1: case CLOSED", row?.status === "CLOSED", row?.status);
+    check("C1: case archived", row?.archived === true);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -162,6 +177,15 @@ export async function runWorkflows(staff) {
 
     const mp = await req("POST", `/api/invoices/${inv.data.invoiceId}/mark-paid`, { j: samuel.jar });
     check("C2: mark paid = ok", mp.status === 200, `${mp.status}`);
+    check("C2: after payment -> PAID (open)", (await st(c)) === "PAID");
+
+    // Post-payment — tax-office response, then finish.
+    await uploadDoc(samuel.jar, c, { kind: "ADMIN_RESPONSE" });
+    const ar = await req("POST", `/api/cases/${c}/admin-response`, { j: samuel.jar, json: {} });
+    check("C2: record tax-office response = ok", ar.status === 200, `${ar.status}`);
+    check("C2: status ADMIN_RESPONSE", (await st(c)) === "ADMIN_RESPONSE");
+    const fin = await req("POST", `/api/cases/${c}/close`, { j: samuel.jar, json: { outcome: "finish" } });
+    check("C2: close (finish) = ok", fin.status === 200, `${fin.status}`);
     check("C2: case CLOSED", (await st(c)) === "CLOSED");
   }
 

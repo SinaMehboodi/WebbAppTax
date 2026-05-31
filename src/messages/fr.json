@@ -1,4 +1,14 @@
 {
+  "adminResp": {
+    "cardTitle": "Réponse de l'administration",
+    "hint": "Téléversez le courrier de décision de l'administration — il est enregistré comme étape et transmis au client.",
+    "letterLabel": "Courrier de l'administration (PDF ou photo)",
+    "submit": "Enregistrer et envoyer au client",
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "letterRequired": "Veuillez d'abord joindre le courrier de l'administration.",
+    "notifyTitle": "Réponse de l'administration fiscale",
+    "notifyBody": "La décision de l'administration est disponible — ouvrez votre dossier pour la consulter."
+  },
   "app": {
     "name": "SamTaxco",
     "tagline": "Gestion et optimisation des impôts directs locaux",

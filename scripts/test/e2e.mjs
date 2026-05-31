@@ -84,7 +84,8 @@ async function analyze(staffJar, caseId, tag) {
   check(`${tag}: → DECISION_PENDING`, (await st(caseId)) === "DECISION_PENDING");
 }
 
-// Manager-only tail: decision → result → invoice → mark-paid → CLOSED.
+// Manager tail: decision → result → invoice → mark-paid (PAID, stays open) →
+// record tax-office response (notifies client) → close (CLOSED + archived).
 async function decideToPaid(staffJar, caseId, tag, { savings } = {}) {
   const dec = await req("POST", `/api/cases/${caseId}/decision`, { j: staffJar, json: { branch: "PROCEEDING", note: "Contestation" } });
   check(`${tag}: decision PROCEEDING = 200`, dec.status === 200, `${dec.status}`);
@@ -97,7 +98,23 @@ async function decideToPaid(staffJar, caseId, tag, { savings } = {}) {
   check(`${tag}: invoice marked paid = 200`, mp.status === 200, `${mp.status}`);
   const paid = await prisma.invoice.findUnique({ where: { id: inv.data.invoiceId } });
   check(`${tag}: invoice PAID + paidAt`, paid?.status === "PAID" && !!paid?.paidAt, paid?.status);
-  const row = await caseRow(caseId);
+  // Payment leaves the case OPEN at PAID until the tax-office response arrives.
+  let row = await caseRow(caseId);
+  check(`${tag}: after payment → PAID, still open`, row?.status === "PAID" && row?.archived === false, `${row?.status}/${row?.archived}`);
+  // Post-payment — record the administration's letter (notifies client), then finish.
+  const arNoLetter = await req("POST", `/api/cases/${caseId}/admin-response`, { j: staffJar, json: {} });
+  check(`${tag}: response blocked until letter attached = 400`, arNoLetter.status === 400, `${arNoLetter.status}`);
+  const fd = new FormData();
+  fd.set("file", new Blob([fakeNoticePdf("ADMIN LETTER")], { type: "application/pdf" }), "letter.pdf");
+  fd.set("kind", "ADMIN_RESPONSE");
+  const upL = await req("POST", `/api/cases/${caseId}/documents`, { j: staffJar, form: fd });
+  check(`${tag}: staff uploads admin letter = 201`, upL.status === 201, `${upL.status}`);
+  const ar = await req("POST", `/api/cases/${caseId}/admin-response`, { j: staffJar, json: {} });
+  check(`${tag}: record tax-office response = 200`, ar.status === 200, `${ar.status} ${ar.data?.error || ""}`);
+  check(`${tag}: → ADMIN_RESPONSE milestone`, (await st(caseId)) === "ADMIN_RESPONSE");
+  const fin = await req("POST", `/api/cases/${caseId}/close`, { j: staffJar, json: { outcome: "finish" } });
+  check(`${tag}: close (finish) = 200`, fin.status === 200, `${fin.status}`);
+  row = await caseRow(caseId);
   check(`${tag}: case CLOSED + archived`, row?.status === "CLOSED" && row?.archived === true, `${row?.status}/${row?.archived}`);
 }
 

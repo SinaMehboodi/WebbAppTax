@@ -1,4 +1,14 @@
 {
+  "adminResp": {
+    "cardTitle": "Tax-office response",
+    "hint": "Upload the administration's decision letter — it is recorded as a milestone and delivered to the client.",
+    "letterLabel": "Administration's letter (PDF or photo)",
+    "submit": "Record & send to client",
+    "error": "Something went wrong. Please try again.",
+    "letterRequired": "Please attach the administration's letter first.",
+    "notifyTitle": "Tax administration's response",
+    "notifyBody": "The tax office's decision is available — open your case to view it."
+  },
   "app": {
     "name": "SamTaxco",
     "tagline": "Local direct tax management & optimization",

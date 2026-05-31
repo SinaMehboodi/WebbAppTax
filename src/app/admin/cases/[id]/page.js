@@ -13,6 +13,7 @@ import DocRequestForm from "./DocRequestForm";
 import AnalysisForm from "./AnalysisForm";
 import DecisionForm from "./DecisionForm";
 import ResultForm from "./ResultForm";
+import AdminResponseForm from "./AdminResponseForm";
 import InvoiceActions from "./InvoiceActions";
 import CloseCaseDialog from "./CloseCaseDialog";
 import AssignmentManager from "./AssignmentManager";
@@ -177,6 +178,16 @@ export default async function AdminCaseDetail({ params }) {
                 feePercent={c.feePercent}
                 estimatedSavings={c.estimatedSavings}
                 feeFlatAmount={c.feeFlatAmount}
+              />
+            </Card>
+          )}
+
+          {/* Post-payment — record the tax-office response & deliver to client */}
+          {!isTerminal && c.status === "PAID" && can(me, PERMS.CASE_RECORD_RESULT) && (
+            <Card title={t("adminResp.cardTitle")} icon="📨" tone="sky">
+              <AdminResponseForm
+                caseId={c.id}
+                hasLetter={c.documents.some((d) => d.kind === "ADMIN_RESPONSE")}
               />
             </Card>
           )}

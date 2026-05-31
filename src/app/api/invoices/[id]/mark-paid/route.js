@@ -22,11 +22,11 @@ export async function POST(_request, { params }) {
     where: { id },
     data: { status: "PAID", paidAt: new Date() },
   });
+  // Payment no longer closes the case. Per the firm's process the tax
+  // administration's decision letter arrives AFTER payment, so the case stays
+  // open at PAID until staff record that response (POST /admin-response) and
+  // then finish the case via the close flow.
   await setStatus({ caseId: inv.caseId, status: "PAID", actorId: user.id });
-  await prisma.taxCase.update({
-    where: { id: inv.caseId },
-    data: { closedAt: new Date(), archived: true, status: "CLOSED" },
-  });
   await logActivity({ caseId: inv.caseId, actorId: user.id, action: "invoice.paid" });
   await notify({
     userId: inv.clientId,

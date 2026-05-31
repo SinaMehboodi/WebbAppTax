@@ -55,7 +55,7 @@ export async function POST(request, { params }) {
       status: newStatus,
       closeReason: outcome === "finish" ? (reason || null) : reason,
       closedAt: new Date(),
-      archived: outcome !== "finish" ? true : c.archived, // cancel/stop archive immediately
+      archived: true, // any close (finish/stop/cancel) archives the case
     },
   });
 
