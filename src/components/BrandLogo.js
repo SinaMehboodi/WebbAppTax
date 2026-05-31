@@ -1,29 +1,27 @@
-// SamTaxco brand mark — a downward arrow settling onto a baseline ("we bring
-// your tax down to the floor"). Replaces the plain "S". Pure SVG, so it works in
-// both server and client components.
-//
-//   <BrandLogo className="h-9 w-9" />     → gradient badge + white glyph
-//   <BrandLogo badge={false} className="h-44 w-44 text-white/10" />  → bare glyph
-
-function Glyph({ className }) {
+// SamTaxco brand mark — "S.co" inside several concentric, role-coloured rings
+// (client blue → employee teal → admin violet). Self-contained, theme-aware SVG
+// that scales to whatever size the className sets (e.g. h-8 w-8).
+export default function BrandLogo({ className = "" }) {
   return (
-    <svg viewBox="0 0 32 32" fill="none" aria-hidden className={className}>
-      <path d="M16 6.5 V18.6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-      <path d="M10 12.6 L16 19 L22 12.6" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9.5 24.5 H22.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+    <svg viewBox="0 0 44 44" className={className} role="img" aria-label="SamTaxco">
+      {/* disc so the rings + label read on any background */}
+      <circle cx="22" cy="22" r="20.7" fill="var(--surface-1)" />
+      {/* concentric rings, client → admin colours */}
+      <circle cx="22" cy="22" r="20.7" fill="none" stroke="#38bdf8" strokeWidth="1.7" />
+      <circle cx="22" cy="22" r="17.7" fill="none" stroke="#2dd4bf" strokeWidth="1.7" />
+      <circle cx="22" cy="22" r="14.7" fill="none" stroke="#8b5cf6" strokeWidth="1.7" />
+      <text
+        x="22"
+        y="22"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize="12"
+        fontWeight="700"
+        fill="var(--fg)"
+        style={{ fontFamily: "var(--font-geist-sans), system-ui, -apple-system, sans-serif" }}
+      >
+        S.co
+      </text>
     </svg>
-  );
-}
-
-export default function BrandLogo({ className = "", badge = true }) {
-  if (!badge) return <Glyph className={className} />;
-  return (
-    <span
-      className={`relative inline-flex items-center justify-center rounded-2xl text-white shadow-brand ${className}`}
-      style={{ background: "var(--brand-gradient)" }}
-      aria-hidden
-    >
-      <Glyph className="h-[58%] w-[58%]" />
-    </span>
   );
 }

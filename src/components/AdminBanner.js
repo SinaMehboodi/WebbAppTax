@@ -5,7 +5,6 @@
 // live date & time and the role, a mesh-gradient backdrop and a faint brand
 // watermark. Page-agnostic — the page's own NAME is a heading BELOW the banner.
 import { useEffect, useState } from "react";
-import BrandLogo from "./BrandLogo";
 
 const ROLE_BANNER = {
   SUPER_ADMIN: "linear-gradient(135deg,#fb7185 0%,#f43f5e 48%,#be123c 100%)", // coral
@@ -52,9 +51,6 @@ export default function AdminBanner({ role, firstName, lastName, locale, contain
             "radial-gradient(520px circle at 4% 104%, rgba(255,255,255,.16), transparent 52%)",
         }}
       />
-      {/* faint brand watermark */}
-      <BrandLogo badge={false} className="absolute -z-10 -right-5 -bottom-8 h-44 w-44 text-white/10 pointer-events-none" />
-
       <div className={`relative ${containerClass} mx-auto px-4 pb-5 sm:pb-6 ${topInset ? "" : "pt-5"}`}>
         {/* Reserve room for the floating menu button on mobile. */}
         {topInset && <div className="h-14 md:hidden" />}
