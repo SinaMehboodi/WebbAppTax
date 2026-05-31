@@ -42,7 +42,8 @@ export default function AdminSidebar({ user, labels, locale, unreadCount = 0, ca
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="md:hidden fixed top-3 left-3 z-30 rounded-full btn-brand w-10 h-10 text-lg shadow-brand"
+        className="md:hidden fixed left-3 z-30 rounded-full btn-brand w-10 h-10 text-lg shadow-brand"
+        style={{ top: "calc(var(--safe-top) + 0.5rem)" }}
         aria-label="Menu"
       >
         ☰

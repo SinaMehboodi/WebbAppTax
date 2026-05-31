@@ -58,7 +58,7 @@ export default async function AdminLayout({ children }) {
   return (
     <div className="flex-1 flex min-h-0">
       <AdminSidebar user={safeUser} labels={labels} locale={locale} unreadCount={unreadCount} canSupport={canSupport} supportOpen={supportOpen} />
-      <div className="flex-1 min-w-0 overflow-x-hidden">{children}</div>
+      <div className="flex-1 min-w-0 overflow-x-hidden admin-content-pad safe-bottom safe-x">{children}</div>
     </div>
   );
 }

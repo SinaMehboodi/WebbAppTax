@@ -113,15 +113,41 @@ button, a {
   touch-action: manipulation;
 }
 
-/* iOS safe-area utilities (notch + home indicator) */
-.safe-top    { padding-top: max(env(safe-area-inset-top), 0px); }
-.safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
-.pb-nav      { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 7rem); }
-
-@supports (padding: max(0px)) {
-  /* Make the bottom-nav itself sit above the home indicator */
-  .bottom-nav-pad { padding-bottom: max(env(safe-area-inset-bottom), 0.5rem); }
+/* ---------------------------------------------------------------------------
+   Safe-area insets (status bar / notch / home indicator).
+   iOS WKWebView fills env(safe-area-inset-*) natively, but Android WebViews
+   usually report 0 — which tucked the header & content under the status bar.
+   So inside the installed app (Capacitor sets html[data-native]) OR an
+   installed PWA (display-mode: standalone) we enforce a sensible MINIMUM top &
+   bottom inset. Plain browser tabs keep the precise env() values (0 on Android).
+   --------------------------------------------------------------------------- */
+:root {
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
 }
+html[data-native] {
+  --safe-top:    max(env(safe-area-inset-top, 0px), 2.5rem);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 0.85rem);
+}
+@media (display-mode: standalone) {
+  :root {
+    --safe-top:    max(env(safe-area-inset-top, 0px), 2.5rem);
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), 0.85rem);
+  }
+}
+
+.safe-top       { padding-top: var(--safe-top); }
+.safe-bottom    { padding-bottom: var(--safe-bottom); }
+.safe-x         { padding-left: var(--safe-left); padding-right: var(--safe-right); }
+.pb-nav         { padding-bottom: calc(var(--safe-bottom) + 7rem); }
+.bottom-nav-pad { padding-bottom: max(var(--safe-bottom), 0.5rem); }
+
+/* Reserve room for the floating mobile menu button on /admin pages so page
+   titles (e.g. "Reports") never hide behind it; the desktop sidebar replaces it. */
+.admin-content-pad { padding-top: calc(var(--safe-top) + 3rem); }
+@media (min-width: 768px) { .admin-content-pad { padding-top: 0; } }
 
 /* Brand surfaces & gradients (Tailwind v4 lets you reference vars directly) */
 .bg-hero        { background: var(--hero-gradient); }

@@ -36,13 +36,23 @@ async function getThemeAttrs() {
 // affect the theme. Moving it to an external file does NOT remove the warning.
 const THEME_BOOT = `
 (function () {
+  var html = document.documentElement;
   try {
-    var html = document.documentElement;
     if (!html.getAttribute('data-theme')) {
       html.setAttribute(
         'data-theme',
         window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
       );
+    }
+  } catch (e) {}
+  // Tag the Capacitor native shell so CSS can force safe-area insets on Android
+  // WebViews (which report env(safe-area-inset-*) as 0). The bridge is injected
+  // before this script runs, so window.Capacitor is already present.
+  try {
+    var c = window.Capacitor;
+    var native = c && (typeof c.isNativePlatform === 'function' ? c.isNativePlatform() : (c.platform && c.platform !== 'web'));
+    if (native) {
+      html.setAttribute('data-native', (typeof c.getPlatform === 'function') ? c.getPlatform() : (c.platform || 'native'));
     }
   } catch (e) {}
 })();

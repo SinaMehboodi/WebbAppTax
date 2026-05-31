@@ -19,7 +19,7 @@ function BrandMark() {
         <span className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition bg-white/10" />
         S
       </span>
-      <span className="font-semibold tracking-tight">SamTaxco</span>
+      <span className="font-semibold tracking-tight hidden sm:inline">SamTaxco</span>
     </Link>
   );
 }

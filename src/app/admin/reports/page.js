@@ -275,7 +275,7 @@ function KpiTile({ label, value, tone }) {
   };
   return (
     <div className={`card p-4 bg-gradient-to-br ${TONE[tone] || TONE.sky}`}>
-      <div className="text-[10px] uppercase tracking-widest opacity-80">{label}</div>
+      <div className="text-xs uppercase tracking-wide font-medium opacity-80">{label}</div>
       <div className="text-xl sm:text-2xl font-semibold mt-1 tabular-nums">{value}</div>
     </div>
   );

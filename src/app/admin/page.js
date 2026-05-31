@@ -166,7 +166,7 @@ function KpiBig({ label, value, href, tone, icon }) {
       className={`card card-interactive p-5 bg-gradient-to-br ${t.bg}`}
     >
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-widest text-[var(--fg-muted)]">{label}</div>
+        <div className="text-xs uppercase tracking-wide font-medium text-[var(--fg-muted)]">{label}</div>
         <div className={`h-8 w-8 rounded-xl flex items-center justify-center text-base ${t.chip}`}>{icon}</div>
       </div>
       <div className="text-2xl sm:text-3xl font-semibold mt-2 tabular-nums">{value}</div>
@@ -182,7 +182,7 @@ function KpiCard({ label, value, href, tone, icon }) {
   return (
     <Link href={href} className="card card-interactive p-4">
       <div className="flex items-center justify-between">
-        <div className="text-[10px] uppercase tracking-widest text-[var(--fg-muted)]">{label}</div>
+        <div className="text-xs uppercase tracking-wide font-medium text-[var(--fg-muted)]">{label}</div>
         <div className={`h-7 w-7 rounded-lg flex items-center justify-center text-sm ${TONE[tone] || TONE.amber}`}>{icon}</div>
       </div>
       <div className="text-xl font-semibold mt-1 tabular-nums">{value}</div>
